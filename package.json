@@ -1,0 +1,23 @@
+{
+  "name": "styla",
+  "version": "0.0.13-SNAPSHOT",
+  "private": true,
+  "scripts": {
+    "npmInstall": "npm install",
+    "aemSync": "node ./tasks/aemsync.js",
+    "updatePomVersion": "node ./tasks/pomVersion.js"
+  },
+  "engines": {
+    "aem": "6.3",
+    "node": ">=8.11.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "ssh://git@stash.neofonie.de:7999/sty/styla.git",
+    "href": "https://stash.neofonie.de/projects/STY/repos/styla/browse"
+  },
+  "devDependencies": {
+    "aemsync-weily": "latest",
+    "filehound": "latest"
+  }
+}

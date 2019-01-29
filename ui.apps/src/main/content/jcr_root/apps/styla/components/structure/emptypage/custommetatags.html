@@ -1,0 +1,15 @@
+<sly data-sly-use.model="de.neofonie.styla.core.controller.EmptyPageProperties" />
+
+    <meta data-sly-test.ogTitle="${properties.ogTitle}" property="og:title" content="${ogTitle}" />
+    <meta data-sly-test.ogType="${properties.ogType}" property="og:type" content="${ogType}" />
+    <meta data-sly-test.ogUrl="${properties.ogUrl}" property="og:url" content="${ogUrl}" />
+    <meta data-sly-test.ogImage="${properties.ogImage}" property="og:image" content="${ogImage}" />
+
+<sly data-sly-list.metaTags="${model.getMetaTags}">
+    <sly data-sly-test.isProperty="${metaTags.isProperty}">
+        <meta data-sly-test.tagLabel="${metaTags.getTagLabel}" data-sly-test.tagValue="${metaTags.getTagValue}" property="${tagLabel}" content="${tagValue}" />
+    </sly>
+    <sly data-sly-test.isProperty="${!isProperty}">
+        <meta data-sly-test.tagLabel="${metaTags.getTagLabel}" data-sly-test.tagValue="${metaTags.getTagValue}" name="${tagLabel}" content="${tagValue}" />
+    </sly>
+</sly>

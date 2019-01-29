@@ -1,0 +1,26 @@
+@import (reference) "/etc/designs/styla/clientlibs/clientlib-base/less/base.less";
+
+html {
+	height: 100%;
+}
+
+* {
+	box-sizing: border-box;
+}
+
+body {
+	min-height: 100%;
+	padding: 0;
+	margin: 0;
+	font-size: 16px;
+	font-family: sans-serif;
+
+	.fonts-loaded & {
+		font-family: BrandonGrotesqueWeb-Regular, sans-serif;
+	}
+}
+
+.aem-Grid {
+	display: grid;
+	grid-template-rows: 1fr auto;
+}

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jcr:root xmlns:cq="http://www.day.com/jcr/cq/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0"
+    jcr:primaryType="cq:Template"
+    allowedPaths="[/content/styla(/.*)?]">
+    <jcr:content
+        cq:lastModified="{Date}2019-01-22T10:59:33.176+01:00"
+        cq:lastModifiedBy="admin"
+        cq:templateType="/conf/styla/settings/wcm/template-types/emptypage"
+        jcr:primaryType="cq:PageContent"
+        jcr:title="master"
+        status="enabled"/>
+</jcr:root>

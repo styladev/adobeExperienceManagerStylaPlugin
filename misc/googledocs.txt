@@ -1,0 +1,8 @@
+Products & Links & Translations
+https://docs.google.com/spreadsheets/d/1rL1SoXI21aLXEZ9XI32hgDvTkx9PanEEmtNkEq_oIjw/edit#gid=0
+
+Google Drive for Sharing to Netcentrics
+https://drive.google.com/drive/folders/1PvpEBei3y-EMSF_rj2GpKUzSiVz1oWJH
+
+Coral JS:
+/libs/clientlibs/granite/coralui2/js/coral.js
