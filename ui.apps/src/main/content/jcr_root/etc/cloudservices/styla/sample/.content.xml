@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jcr:root xmlns:sling="http://sling.apache.org/jcr/sling/1.0" xmlns:cq="http://www.day.com/jcr/cq/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0"
+    jcr:primaryType="cq:Page">
+    <jcr:content
+        cq:designPath="/etc/acs/styla/components/stylapage"
+        cq:lastModified="{Date}2019-01-29T09:00:35.817+01:00"
+        cq:lastModifiedBy="admin"
+        cq:template="/apps/acs/styla/templates/styla"
+        jcr:lastModified="{Date}2019-01-29T09:00:35.816+01:00"
+        jcr:lastModifiedBy="admin"
+        jcr:primaryType="cq:PageContent"
+        jcr:title="Client sample"
+        sling:resourceType="acs/styla/components/stylapage"
+        script="//client-scripts.prod.us.magalog.net/scripts/clients/ci-oxid-nle.js"
+        seoApiUrl="http://seoapi.styla.com/clients/ci-oxid-nle?url=story/$URL"/>
+</jcr:root>

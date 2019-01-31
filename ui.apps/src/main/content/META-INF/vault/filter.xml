@@ -2,4 +2,5 @@
 <workspaceFilter version="1.0">
     <filter root="/apps/styla"/>
     <filter root="/apps/acs"/>
+    <filter root="/etc/cloudservices/styla"/>
 </workspaceFilter>

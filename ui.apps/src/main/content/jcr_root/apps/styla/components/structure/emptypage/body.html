@@ -1,13 +1,3 @@
-<sly data-sly-use.page="com.adobe.cq.wcm.core.components.models.Page"
-     data-sly-test="${page.language == 'fr'}">
-    <div style="display:none;">
-        ﻿<!-- Start of Swaven tag -->
-        <script>
-            (function(e){try{var a=window.swnDataLayer=window.swnDataLayer||{};a.appId=e||a.appId,a.eventBuffer=a.eventBuffer||[],a.loadBuffer=a.loadBuffer||[],a.push=a.push||function(e){a.eventBuffer.push(e)},a.load=a.load||function(e){a.loadBuffer.push(e)};var t=document.getElementsByTagName("script")[0],n=document.createElement("script");n.async=!0,n.src="//wtb-tag.swaven.com/scripts/"+a.appId+"/tag.min.js",t.parentNode.insertBefore(n,t)}catch(e){console.log(e)}}("5be994e7e8e0f55585685481"));
-        </script>
-        <!-- End of Swaven tag -->
-    </div>
-</sly>
 <sly data-sly-use.templatedContainer="com.day.cq.wcm.foundation.TemplatedContainer"
      data-sly-repeat.child="${templatedContainer.structureResources}"
      data-sly-resource="${child.path @ resourceType=child.resourceType, decorationTagName='div'}" />

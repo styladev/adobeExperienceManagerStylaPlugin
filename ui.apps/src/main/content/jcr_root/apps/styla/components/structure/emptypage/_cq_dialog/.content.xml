@@ -30,6 +30,13 @@
                                 sling:resourceType="granite/ui/components/coral/foundation/container"
                                 class="aem-dialog--full-width">
                                 <items jcr:primaryType="nt:unstructured">
+                                    <allowSeoImport
+                                        jcr:primaryType="nt:unstructured"
+                                        sling:resourceType="granite/ui/components/coral/foundation/form/checkbox"
+                                        text="Allow SEO import"
+                                        value="{Boolean}true"
+                                        uncheckedValue="{Boolean}false"
+                                        name="./allowSeoImport"/>
                                     <requiredOgTags
                                         jcr:primaryType="nt:unstructured"
                                         jcr:title="Required Open Graph Tags"
@@ -53,7 +60,7 @@
                                                     <ogUrl
                                                         jcr:primaryType="nt:unstructured"
                                                         sling:resourceType="granite/ui/components/coral/foundation/form/textfield"
-                                                        fieldLabel="og:type"
+                                                        fieldLabel="og:url"
                                                         name="./ogUrl"/>
                                                     <ogImage
                                                         jcr:primaryType="nt:unstructured"
@@ -98,7 +105,8 @@
                                                                     jcr:primaryType="nt:unstructured"
                                                                     sling:resourceType="granite/ui/components/coral/foundation/form/checkbox"
                                                                     text="Is property tag"
-                                                                    value="false"
+                                                                    value="{Boolean}true"
+                                                                    uncheckedValue="{Boolean}false"
                                                                     name="./isProperty"/>
                                                             </items>
                                                         </field>

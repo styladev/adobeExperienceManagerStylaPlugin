@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jcr:root xmlns:sling="http://sling.apache.org/jcr/sling/1.0" xmlns:cq="http://www.day.com/jcr/cq/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0"
+    jcr:primaryType="cq:Page">
+    <jcr:content
+        cq:allowedChildren="/conf/styla/settings/wcm/templates/master"
+        cq:allowedTemplates="/conf/styla/settings/wcm/templates/master"
+        cq:contextHubPath="/etc/cloudsettings/default/contexthub"
+        cq:contextHubSegmentsPath="/etc/segmentation/contexthub"
+        cq:lastModified="{Date}2019-01-28T15:58:51.918+01:00"
+        cq:lastModifiedBy="admin"
+        cq:template="/conf/styla/settings/wcm/templates/master"
+        jcr:primaryType="cq:PageContent"
+        jcr:title="magazine"
+        sling:resourceType="styla/components/structure/emptypage"/>
+    <knock-knock/>
+    <_x0033_pics/>
+</jcr:root>

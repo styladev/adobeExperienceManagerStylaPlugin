@@ -13,14 +13,16 @@
                 <items jcr:primaryType="cq:WidgetCollection">
                     <seoApiUrl
                         jcr:primaryType="cq:Widget"
-                        fielddescription="The url for the styla SEO API"
-                        fieldlabel="SEO API URL"
+                        fieldDescription="The url for the styla SEO API. Use placeholder $URL and $LANG, e.g. http://seoapi.styla.com/clients/CLIENT?url=story/$URL&amp;lang=$LANG"
+                        fieldLabel="SEO API URL"
+                        xtype="textfield"
                         name="./seoApiUrl"
                         title="SEO API URL"/>
                     <script
                         jcr:primaryType="cq:Widget"
-                        fielddescription="The JS script for the styla Content Hub"
-                        fieldlabel="SCRIPT"
+                        fieldDescription="The JS script for the styla Content Hub"
+                        fieldLabel="SCRIPT"
+                        xtype="textfield"
                         name="./script"
                         title="Script"/>
                 </items>

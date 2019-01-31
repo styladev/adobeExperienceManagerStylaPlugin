@@ -4,7 +4,6 @@ import com.day.cq.wcm.api.Page;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.sling.api.resource.ResourceResolver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,7 +11,7 @@ public class MetaTagJsonUtils {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MetaTagJsonUtils.class);
 
-    public static void processMetaTag(Page childPage, JsonElement tag) {
+    public static MetaTag getMetaTag(Page childPage, JsonElement tag) {
         JsonObject attributes = getTagAttributes(tag);
 
         MetaTag metaTag = new MetaTag();
@@ -24,9 +23,10 @@ public class MetaTagJsonUtils {
         }
 
         if (metaTag.isValid()) {
-            MetaTagJcrUtils.writeMetaTags(childPage.getContentResource(), metaTag);
+            return metaTag;
         }
 
+        return null;
     }
 
     private static String getAttribute(JsonObject attributes, String attributeName) {
@@ -56,7 +56,7 @@ public class MetaTagJsonUtils {
         return attributes;
     }
 
-    static class MetaTag {
+    public static class MetaTag {
         private String property;
         private String name;
         private String content;

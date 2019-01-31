@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jcr:root xmlns:sling="http://sling.apache.org/jcr/sling/1.0" xmlns:cq="http://www.day.com/jcr/cq/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0" xmlns:mix="http://www.jcp.org/jcr/mix/1.0"
+    jcr:primaryType="cq:Page">
+    <jcr:content
+        cq:template="/libs/cq/cloudserviceconfigs/templates/servicepage"
+        jcr:isCheckedOut="{Boolean}true"
+        jcr:mixinTypes="[mix:versionable]"
+        jcr:primaryType="cq:PageContent"
+        jcr:title="Styla"
+        jcr:uuid="d724d56c-5673-4dca-9ca9-5d11be7fc837"
+        sling:resourceType="cq/cloudserviceconfigs/components/servicepage"
+        thumbnailPath="/content/styla.thumb.480.300.png"/>
+    <sample/>
+    <sample-fr/>
+</jcr:root>
