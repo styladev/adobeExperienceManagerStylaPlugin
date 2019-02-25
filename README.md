@@ -1,6 +1,18 @@
-# Sample AEM project template
+# Adobe Experience Manager Styla Plugin
 
-This is a project template for AEM-based applications. It is intended as a best-practice set of examples as well as a potential starting point to develop your own functionality.
+## To build via docker
+
+`docker-compose up --build`
+
+It will create three ZIP files in `{core,ui.apps,ui.content.styla}/target` folders. All three ZIPs need to be deployed in AEM.
+
+## Plugin setup
+
+check documentation in `doc` folder
+
+
+
+Below is the original template README
 
 ## Modules
 

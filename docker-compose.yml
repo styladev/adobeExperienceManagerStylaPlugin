@@ -1,0 +1,12 @@
+version: '3'
+services:
+  aem-styla:
+    image: 'aem-styla:local-latest'
+    build:
+      context: '.'
+      dockerfile: 'Dockerfile'
+    volumes:
+      # compiled output folders are bound to the host to get the compiled artifacts from the docker container
+      - './core/target:/opt/app/core/target'
+      - './ui.apps/target:/opt/app/ui.apps/target'
+      - './ui.content.styla/target:/opt/app/ui.content.styla/target'
