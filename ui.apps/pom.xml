@@ -9,7 +9,7 @@
     <parent>
         <groupId>de.neofonie.styla</groupId>
         <artifactId>styla</artifactId>
-        <version>0.0.13-SNAPSHOT</version>
+        <version>0.9.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -110,7 +110,7 @@
         <dependency>
             <groupId>de.neofonie.styla</groupId>
             <artifactId>styla.core</artifactId>
-            <version>0.0.13-SNAPSHOT</version>
+            <version>0.9.0</version>
         </dependency>
 
         <dependency>

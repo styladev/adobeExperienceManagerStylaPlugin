@@ -1,6 +1,6 @@
 {
   "name": "styla",
-  "version": "0.0.13-SNAPSHOT",
+  "version": "0.9.0",
   "private": true,
   "scripts": {
     "npmInstall": "npm install",
@@ -10,11 +10,6 @@
   "engines": {
     "aem": "6.3",
     "node": ">=8.11.2"
-  },
-  "repository": {
-    "type": "git",
-    "url": "ssh://git@stash.neofonie.de:7999/sty/styla.git",
-    "href": "https://stash.neofonie.de/projects/STY/repos/styla/browse"
   },
   "devDependencies": {
     "aemsync-weily": "latest",
