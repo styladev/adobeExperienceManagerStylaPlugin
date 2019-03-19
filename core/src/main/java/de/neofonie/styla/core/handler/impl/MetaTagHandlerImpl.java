@@ -25,14 +25,14 @@ public class MetaTagHandlerImpl implements MetaTagHandler {
 	 * @return List with adapted MetaTag based on the nodes below jcr:content/metatags
 	 */
 	public List<MetaTag> getMetaTags(Resource currentResource) {
-		List<MetaTag> metaTagList = new ArrayList();
+		final List<MetaTag> metaTagList = new ArrayList<>();
 
 		if (currentResource != null) {
-			Iterator<Resource> resourceIterator = currentResource.listChildren();
+			final Iterator<Resource> resourceIterator = currentResource.listChildren();
 
 			while (resourceIterator.hasNext()) {
-				Resource metaTagResource = resourceIterator.next();
-				MetaTag metaTag = metaTagResource.adaptTo(MetaTag.class);
+				final Resource metaTagResource = resourceIterator.next();
+				final MetaTag metaTag = metaTagResource.adaptTo(MetaTag.class);
 
 				if (metaTag != null) {
 					metaTagList.add(metaTag);

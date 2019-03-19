@@ -11,6 +11,8 @@ import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.ValueMap;
 import org.apache.sling.models.annotations.DefaultInjectionStrategy;
 import org.apache.sling.models.annotations.Model;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 
@@ -18,16 +20,16 @@ import javax.inject.Inject;
 @Model(adaptables = {Resource.class, SlingHttpServletRequest.class}, defaultInjectionStrategy = DefaultInjectionStrategy.OPTIONAL)
 public class CloudServiceModel {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(CloudServiceModel.class);
+
     @Inject
     private ResourceResolver resourceResolver;
 
     @Inject
     private Page currentPage;
 
-    public String getSeoApiUrl(ResourceResolver resourceResolver, Page contentRootPage) {
-        String seoApiUrl = null;
-        seoApiUrl = getCloudServiceProperty(resourceResolver, contentRootPage);
-        return seoApiUrl;
+    public String getSeoApiUrl(final ResourceResolver resourceResolver, final Page contentRootPage) {
+        return getCloudServiceProperty(resourceResolver, contentRootPage);
     }
 
     public String getSeoApiUrl() {
@@ -39,57 +41,69 @@ public class CloudServiceModel {
     }
 
     private String getCloudServiceConfiguration(Page contentRootPage) {
-        String cloudServiceConfiguration = null;
-
-        if (contentRootPage != null) {
-            ValueMap properties = contentRootPage.getProperties();
-
-            if (properties != null) {
-                return properties.get(Constants.PN_CQ_CLOUD_SERVICE_CONFIGS, "");
-            }
+        if (contentRootPage == null) {
+            LOGGER.warn("ContentRootPage should not be null");
+            return null;
         }
-        return cloudServiceConfiguration;
+
+        final ValueMap properties = contentRootPage.getProperties();
+        if (properties == null) {
+            LOGGER.warn("Properties for contentRootPage should not be null");
+            return null;
+        }
+
+        return properties.get(Constants.PN_CQ_CLOUD_SERVICE_CONFIGS, "");
     }
 
     private String getCloudServiceProperty(String property) {
-        String propertyValue = null;
-        Resource contentResource = currentPage.getContentResource();
-
-        if (contentResource != null) {
-            HierarchyNodeInheritanceValueMap inheritedValueMap = new HierarchyNodeInheritanceValueMap(contentResource);
-            String cloudServicePath = inheritedValueMap.getInherited("cq:cloudserviceconfigs", "");
-
-            if (StringUtils.isNotEmpty(cloudServicePath)) {
-                Resource cloudServiceResource = resourceResolver.getResource(cloudServicePath + "/" + JcrConstants.JCR_CONTENT);
-
-                if (cloudServiceResource != null) {
-                    ValueMap properties = cloudServiceResource.getValueMap();
-
-                    if (properties != null) {
-                        propertyValue = properties.get(property, "");
-                    }
-                }
-            }
+        final Resource contentResource = currentPage.getContentResource();
+        if (contentResource == null) {
+            LOGGER.warn("Content resource for page " + currentPage.getName() + " is null");
+            return null;
         }
-        return propertyValue;
+
+        final HierarchyNodeInheritanceValueMap inheritedValueMap = new HierarchyNodeInheritanceValueMap(contentResource);
+        final String cloudServicePath = inheritedValueMap.getInherited("cq:cloudserviceconfigs", "");
+
+        if (!StringUtils.isNotEmpty(cloudServicePath)) {
+            LOGGER.warn("Cloud service path is empty");
+            return null;
+        }
+
+        final Resource cloudServiceResource = resourceResolver.getResource(cloudServicePath + "/" + JcrConstants.JCR_CONTENT);
+        if (cloudServiceResource == null) {
+            LOGGER.warn("Cloud service resource is empty");
+            return null;
+        }
+
+        final ValueMap properties = cloudServiceResource.getValueMap();
+        if (properties == null) {
+            LOGGER.warn("Cloud service resource properties are empty");
+            return null;
+        }
+
+        return properties.get(property, "");
     }
 
-    private String getCloudServiceProperty(ResourceResolver resourceResolver, Page contentRootPage) {
-        String seoApiUrl = null;
-        String property = "seoApiUrl";
-        String cloudServiceConfiguration = getCloudServiceConfiguration(contentRootPage);
-
-        if (StringUtils.isNotEmpty(cloudServiceConfiguration)) {
-            Resource cloudServiceResource = resourceResolver.getResource(cloudServiceConfiguration + "/" + JcrConstants.JCR_CONTENT);
-
-            if (cloudServiceResource != null) {
-                ValueMap properties = cloudServiceResource.getValueMap();
-
-                if (properties != null) {
-                    seoApiUrl = properties.get(property, "");
-                }
-            }
+    private String getCloudServiceProperty(ResourceResolver resourceResolver, Page rootPage) {
+        final String cloudServiceConfiguration = getCloudServiceConfiguration(rootPage);
+        if (StringUtils.isEmpty(cloudServiceConfiguration)) {
+            LOGGER.warn("Cloud service configuration for page " + rootPage.getName() + " is empty");
+            return null;
         }
-        return seoApiUrl;
+
+        final Resource cloudServiceResource = resourceResolver.getResource(cloudServiceConfiguration + "/" + JcrConstants.JCR_CONTENT);
+        if (cloudServiceResource == null) {
+            LOGGER.warn("Cloud service resource for page " + rootPage.getName() + " is empty");
+            return null;
+        }
+
+        final ValueMap properties = cloudServiceResource.getValueMap();
+        if (properties != null) {
+            LOGGER.warn("Cloud service resource properties for page " + rootPage.getName() + " are empty");
+            return null;
+        }
+
+        return properties.get("seoApiUrl", "");
     }
 }

@@ -16,41 +16,43 @@ public class MetaTagJcrUtils {
     private static final Logger LOGGER = LoggerFactory.getLogger(MetaTagJcrUtils.class);
 
     public static void writeMetaTags(Resource contentResource, MetaTagJsonUtils.MetaTag metaTag) {
-
-        if (contentResource != null) {
-            ResourceResolver resourceResolver = contentResource.getResourceResolver();
-            ModifiableValueMap modifiableValueMap = contentResource.adaptTo(ModifiableValueMap.class);
-
-            if (modifiableValueMap != null) {
-
-                Map<String, Object> properties = new HashMap();
-                checkForOpenGraphTags(metaTag, properties);
-
-                if (properties.size() == 0) {
-                    checkForOtherTags(contentResource, resourceResolver, metaTag, properties);
-                }
-
-                else if (properties.size() > 0) {
-                    modifiableValueMap.putAll(properties);
-                }
-            }
-            try {
-                resourceResolver.commit();
-            } catch (PersistenceException e) {
-                LOGGER.error("Could not commit change for resource " + contentResource.getPath());
-            }
-
+        if (contentResource == null) {
+            LOGGER.warn("contentResource parameter is empty");
+            return;
         }
+
+        final ResourceResolver resourceResolver = contentResource.getResourceResolver();
+        final ModifiableValueMap modifiableValueMap = contentResource.adaptTo(ModifiableValueMap.class);
+        if (modifiableValueMap == null) {
+            LOGGER.warn("modifiableValueMap is empty");
+            return;
+        }
+
+        final Map<String, Object> properties = new HashMap<>();
+        checkForOpenGraphTags(metaTag, properties);
+
+        if (properties.size() == 0) {
+            checkForOtherTags(contentResource, resourceResolver, metaTag, properties);
+        } else {
+            modifiableValueMap.putAll(properties);
+        }
+
+        try {
+            resourceResolver.commit();
+        } catch (PersistenceException e) {
+            LOGGER.error("Could not commit change for resource " + contentResource.getPath());
+        }
+
     }
 
     private static void checkForOtherTags(Resource contentResource, ResourceResolver resourceResolver, MetaTagJsonUtils.MetaTag metaTag, Map<String, Object> properties) {
         try {
-            Resource metaTagsResource = ResourceUtil.getOrCreateResource(resourceResolver, contentResource.getPath() + "/metatags", Collections.emptyMap(), null, true);
+            final Resource metaTagsResource = ResourceUtil.getOrCreateResource(resourceResolver, contentResource.getPath() + "/metatags", Collections.emptyMap(), null, true);
 
-            Iterator<Resource> resourceIterator = metaTagsResource.listChildren();
-            int numberOfMetaTags = Iterators.size(resourceIterator);
+            final Iterator<Resource> resourceIterator = metaTagsResource.listChildren();
+            final int numberOfMetaTags = Iterators.size(resourceIterator);
 
-            boolean isProperty = StringUtils.isNotEmpty(metaTag.getProperty());
+            final boolean isProperty = StringUtils.isNotEmpty(metaTag.getProperty());
             properties.put("tagLabel", isProperty ? metaTag.getProperty() : metaTag.getName());
             properties.put("tagValue", metaTag.getContent());
             properties.put("isProperty", isProperty);
@@ -65,12 +67,15 @@ public class MetaTagJcrUtils {
         if (StringUtils.equals(metaTag.getProperty(), "og:type") && metaTag.getContent() != null) {
             properties.put("ogType", metaTag.getContent());
         }
+
         if (StringUtils.equals(metaTag.getProperty(), "og:title") && metaTag.getContent() != null) {
             properties.put("ogTitle", metaTag.getContent());
         }
+
         if (StringUtils.equals(metaTag.getProperty(), "og:url") && metaTag.getContent() != null) {
             properties.put("ogUrl", metaTag.getContent());
         }
+
         if (StringUtils.equals(metaTag.getProperty(), "og:image") && metaTag.getContent() != null) {
             properties.put("ogImage", metaTag.getContent());
         }

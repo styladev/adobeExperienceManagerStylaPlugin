@@ -1,20 +1,15 @@
 package de.neofonie.styla.core.utils;
 
-import com.day.cq.wcm.api.Page;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class MetaTagJsonUtils {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(MetaTagJsonUtils.class);
+    public static MetaTag getMetaTag(final JsonElement tag) {
+        final JsonObject attributes = getTagAttributes(tag);
 
-    public static MetaTag getMetaTag(Page childPage, JsonElement tag) {
-        JsonObject attributes = getTagAttributes(tag);
-
-        MetaTag metaTag = new MetaTag();
+        final MetaTag metaTag = new MetaTag();
 
         if (attributes != null) {
             metaTag.setProperty(getAttribute(attributes, "property"));
@@ -30,30 +25,28 @@ public class MetaTagJsonUtils {
     }
 
     private static String getAttribute(JsonObject attributes, String attributeName) {
-        String attribute = "";
         if (attributes.has(attributeName)) {
-            JsonElement jsonElement = attributes.get(attributeName);
+            final JsonElement jsonElement = attributes.get(attributeName);
 
             if (jsonElement != null) {
-                attribute = jsonElement.getAsString();
+                return jsonElement.getAsString();
             }
         }
 
-        return attribute;
+        return "";
     }
 
     private static JsonObject getTagAttributes(JsonElement tag) {
-        JsonObject object = tag.getAsJsonObject();
+        final JsonObject object = tag.getAsJsonObject();
 
-        JsonObject attributes = null;
         if (object.has("attributes")) {
             JsonElement attributesElement = object.get("attributes");
             if (attributesElement != null) {
-                attributes = attributesElement.getAsJsonObject();
+                return attributesElement.getAsJsonObject();
             }
         }
 
-        return attributes;
+        return null;
     }
 
     public static class MetaTag {

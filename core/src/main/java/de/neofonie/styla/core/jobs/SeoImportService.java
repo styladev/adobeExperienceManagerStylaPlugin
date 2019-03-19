@@ -50,12 +50,7 @@ public class SeoImportService implements Runnable {
     @Reference
     private Replicator replicator;
 
-    CloudServiceModel cloudServiceModel = new CloudServiceModel();
-
-    /*
-     * Name of the seo import service subservice
-     */
-    String SEO_IMPORT_SERVICE = "seoImportService";
+    private CloudServiceModel cloudServiceModel = new CloudServiceModel();
 
     @Reference
     private SlingRepository repository;
@@ -65,8 +60,7 @@ public class SeoImportService implements Runnable {
     private String templateType;
 
     @ObjectClassDefinition(name = "Styla SEO job service", description = "CRON job for importing SEO data from Styla")
-    public static @interface Config {
-
+    public @interface Config {
         @AttributeDefinition(name = "Cron-job expression")
         String scheduler_expression() default "0 15 12 ? * *";
 
@@ -78,109 +72,114 @@ public class SeoImportService implements Runnable {
 
         @AttributeDefinition(name = "Auto-Activate", description = "If checked, pages with imported SEO data will be activated automatically")
         boolean autoActivate() default true;
-
     }
-
 
     @Activate
     protected void activate(final Config config) {
-
-        String configuredContentRootPath = String.valueOf(config.contentRootPath());
-        String templateType = String.valueOf(config.templateType());
-        this.autoActivate = Boolean.valueOf(config.autoActivate());
-        this.contentRootPath = (configuredContentRootPath != null) ? configuredContentRootPath : null;
+        final String templateType = config.templateType();
+        this.autoActivate = config.autoActivate();
+        this.contentRootPath = config.contentRootPath();
         this.templateType = StringUtils.isNotEmpty(templateType) ? templateType : "/conf/styla/settings/wcm/templates/master";
 
         LOGGER.info("configure: contentRootPath='{}''", this.contentRootPath);
     }
 
     private ResourceResolver getResourceResolver() {
-        Map<String, Object> authInfo = Collections.singletonMap(ResourceResolverFactory.SUBSERVICE, (Object) SEO_IMPORT_SERVICE);
+        final String SEO_IMPORT_SERVICE = "seoImportService";
+        final Map<String, Object> authInfo = Collections.singletonMap(ResourceResolverFactory.SUBSERVICE, SEO_IMPORT_SERVICE);
 
         try {
-            ResourceResolver resourceResolver = resourceResolverFactory.getServiceResourceResolver(authInfo);
-            if (resourceResolver != null) {
-                return resourceResolver;
-            } else {
-                LOGGER.debug("ResourceResolver is null (Subservice {})", SEO_IMPORT_SERVICE);
+            final ResourceResolver resourceResolver = resourceResolverFactory.getServiceResourceResolver(authInfo);
+
+            if (resourceResolver == null) {
+                LOGGER.warn("ResourceResolver is null (Subservice {})", SEO_IMPORT_SERVICE);
             }
+
+            return resourceResolver;
         } catch (LoginException e) {
             LOGGER.error("Login Exception for Subservice - " + SEO_IMPORT_SERVICE, e.getMessage());
         }
+
         return null;
     }
 
     @Override
     public void run() {
-        ResourceResolver resourceResolver = getResourceResolver();
-        Page contentRootPage = getContentRootPage(resourceResolver);
+        final ResourceResolver resourceResolver = getResourceResolver();
 
-        if (contentRootPage != null) {
-            List<Page> pages = new ArrayList();
-            PageUtils.recursivelySearchForPage(contentRootPage.listChildren(), pages, templateType);
-            LOGGER.info("Found pages (" + pages.size() + ")");
+        final Page rootPage = getContentRootPage(resourceResolver);
+        if (rootPage == null) {
+            LOGGER.error("Failed to get root page");
+            return;
+        }
 
-            for (Page childPage : pages) {
-                LOGGER.info("Processing page: " + childPage.getName() + " - " + childPage.getPath());
+        final List<Page> pages = new ArrayList<>();
+        PageUtils.recursivelySearchForPage(rootPage.listChildren(), pages, templateType);
+        LOGGER.info("Found pages (" + pages.size() + ")");
 
-                ValueMap properties = childPage.getProperties();
+        for (final Page childPage : pages) {
+            processPage(resourceResolver, rootPage, childPage);
+        }
+    }
 
-                if (properties != null && !properties.containsKey("allowSeoImport")) {
-                    LOGGER.warn("Skip page due not allowedSeoImport");
+
+
+    private void processPage(final ResourceResolver resourceResolver, final Page rootPage, final Page currentPage) {
+        LOGGER.info("Processing page: " + currentPage.getName() + " - " + currentPage.getPath());
+
+        final ValueMap properties = currentPage.getProperties();
+        if (properties != null && !properties.containsKey("allowSeoImport")) {
+            LOGGER.warn("Skip page due not allowedSeoImport");
+            return;
+        }
+
+        final String seoApiUrl = buildSeoApiUrl(resourceResolver, rootPage, currentPage);
+        final JsonArray metaData = getMetaData(seoApiUrl);
+
+        if (metaData != null) {
+            Iterator<JsonElement> iterator = metaData.iterator();
+            while (iterator.hasNext()) {
+                JsonElement tag = iterator.next();
+
+                final Resource contentResource = currentPage.getContentResource();
+                final MetaTagJsonUtils.MetaTag metaTag = MetaTagJsonUtils.getMetaTag(tag);
+                if (contentResource == null) {
+                    LOGGER.warn("Content resource is empty for page " + currentPage.getName());
                     continue;
                 }
-                String seoApiUrl = cloudServiceModel.getSeoApiUrl(resourceResolver, contentRootPage);
-                seoApiUrl = seoApiUrl.replace("$URL", childPage.getName());
-                seoApiUrl = seoApiUrl.replace("$LANG", childPage.getLanguage().toString());
-                JsonArray metaData = getMetaData(seoApiUrl);
 
-                if (metaData != null) {
-                    Iterator<JsonElement> iterator = metaData.iterator();
-                    while (iterator.hasNext()) {
-                        JsonElement tag = iterator.next();
+                MetaTagJcrUtils.writeMetaTags(contentResource, metaTag);
 
-                        Resource contentResource = childPage.getContentResource();
-                        MetaTagJsonUtils.MetaTag metaTag = MetaTagJsonUtils.getMetaTag(childPage, tag);
-                        if (contentResource == null) {
-                            LOGGER.warn("Content resource is empty for page " + childPage.getName());
-                            continue;
-                        }
-
-                        MetaTagJcrUtils.writeMetaTags(contentResource, metaTag);
-
-                        if (!autoActivate) {
-                            LOGGER.warn("Autoactive is false");
-                            continue;
-                        }
-
-                        try {
-                            resourceResolver.refresh();
-                            replicator.replicate(resourceResolver.adaptTo(Session.class), ReplicationActionType.ACTIVATE, contentResource.getPath());
-                            resourceResolver.commit();
-                        } catch (NullPointerException|ReplicationException|PersistenceException e) {
-                            LOGGER.warn("Could not auto activate " + contentResource.getPath(), e);
-                        }
-                    }
+                if (!autoActivate) {
+                    LOGGER.warn("Autoactive is false");
+                    continue;
                 }
 
+                try {
+                    resourceResolver.refresh();
+                    replicator.replicate(resourceResolver.adaptTo(Session.class), ReplicationActionType.ACTIVATE, contentResource.getPath());
+                    resourceResolver.commit();
+                } catch (NullPointerException|ReplicationException|PersistenceException e) {
+                    LOGGER.warn("Could not auto activate " + contentResource.getPath(), e);
+                }
             }
         }
     }
 
     private JsonArray getMetaData(String seoApiUrl) {
-        String jsonResponse = executeGetDataRequest(seoApiUrl);
+        final String jsonResponse = executeGetDataRequest(seoApiUrl);
 
-        JsonParser jsonParser = new JsonParser();
-        JsonElement jsonTree = jsonParser.parse(jsonResponse);
+        final JsonParser jsonParser = new JsonParser();
+        final JsonElement jsonTree = jsonParser.parse(jsonResponse);
 
         if (jsonTree == null) {
             LOGGER.warn("Seo api response should not be empty");
             return null;
         }
 
-        JsonObject json = ((JsonObject) jsonTree);
+        final JsonObject json = ((JsonObject) jsonTree);
 
-        String status = json.get("status").getAsInt() + "";
+        final String status = json.get("status").getAsInt() + "";
         if (!status.startsWith("2")) {
             LOGGER.warn("Seo api is returning status: " + status);
         }
@@ -190,15 +189,14 @@ public class SeoImportService implements Runnable {
 
     private String executeGetDataRequest(String seoApiUrl) {
         LOGGER.info("Requesting seo api url: " + seoApiUrl);
-        String response = null;
-        HttpClient httpClient = new HttpClient();
-        HttpConnectionManagerParams params = new HttpConnectionManagerParams();
+        final HttpClient httpClient = new HttpClient();
+        final HttpConnectionManagerParams params = new HttpConnectionManagerParams();
         params.setSoTimeout(10000);
         params.setConnectionTimeout(10000);
         httpClient.getHttpConnectionManager().setParams(params);
 
-        HttpMethod httpGet = new GetMethod(seoApiUrl);
-        HttpMethodParams httpMethodParams = new HttpMethodParams();
+        final HttpMethod httpGet = new GetMethod(seoApiUrl);
+        final HttpMethodParams httpMethodParams = new HttpMethodParams();
         httpMethodParams.setSoTimeout(10000);
         httpMethodParams.setParameter("accept", "application/json");
         httpGet.setParams(httpMethodParams);
@@ -207,7 +205,7 @@ public class SeoImportService implements Runnable {
         try {
             int statusCode = httpClient.executeMethod(httpGet);
             if (statusCode == HTTP_OK) {
-                response = httpGet.getResponseBodyAsString();
+                return httpGet.getResponseBodyAsString();
             } else if (statusCode == HTTP_NOT_FOUND) {
                 LOGGER.warn("HTTP request to " + seoApiUrl + " returned status code 404 and is not handled as a failure. No data?");
             } else {
@@ -216,16 +214,18 @@ public class SeoImportService implements Runnable {
         } catch (IOException e) {
             LOGGER.error("Error during HTTP request to " + seoApiUrl + ": " + e.getMessage());
         }
-        return response;
+
+        return null;
     }
 
 
 
     private Page getContentRootPage(ResourceResolver resourceResolver) {
-        Resource contentRootResource = getContentRootResource(resourceResolver);
+        final Resource contentRootResource = getContentRootResource(resourceResolver);
         if (contentRootResource != null) {
             return contentRootResource.adaptTo(Page.class);
         }
+
         return null;
     }
 
@@ -239,6 +239,21 @@ public class SeoImportService implements Runnable {
         if (StringUtils.isNotEmpty(contentRootPath) && resourceResolver != null) {
             return resourceResolver.getResource(contentRootPath);
         }
+
         return null;
+    }
+
+    /**
+     * Build the current
+     *
+     * @param resourceResolver
+     * @param rootPage
+     * @param currentPage
+     * @return
+     */
+    private String buildSeoApiUrl(final ResourceResolver resourceResolver, final Page rootPage, final Page currentPage) {
+        return cloudServiceModel.getSeoApiUrl(resourceResolver, rootPage)
+                .replace("$URL", currentPage.getName())
+                .replace("$LANG", currentPage.getLanguage().toString());
     }
 }

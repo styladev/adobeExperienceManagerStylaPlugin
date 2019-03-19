@@ -6,5 +6,7 @@ import org.apache.sling.api.resource.Resource;
 import java.util.List;
 
 public interface MetaTagHandler {
+
     List<MetaTag> getMetaTags(Resource metatags);
+
 }
