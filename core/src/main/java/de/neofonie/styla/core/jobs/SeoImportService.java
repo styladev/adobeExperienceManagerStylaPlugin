@@ -118,11 +118,15 @@ public class SeoImportService implements Runnable {
         if (contentRootPage != null) {
             List<Page> pages = new ArrayList();
             PageUtils.recursivelySearchForPage(contentRootPage.listChildren(), pages, templateType);
+            LOGGER.info("Found pages (" + pages.size() + ")");
 
             for (Page childPage : pages) {
+                LOGGER.info("Processing page: " + childPage.getName() + " - " + childPage.getPath());
+
                 ValueMap properties = childPage.getProperties();
 
                 if (properties != null && !properties.containsKey("allowSeoImport")) {
+                    LOGGER.warn("Skip page due not allowedSeoImport");
                     continue;
                 }
                 String seoApiUrl = cloudServiceModel.getSeoApiUrl(resourceResolver, contentRootPage);
@@ -137,18 +141,24 @@ public class SeoImportService implements Runnable {
 
                         Resource contentResource = childPage.getContentResource();
                         MetaTagJsonUtils.MetaTag metaTag = MetaTagJsonUtils.getMetaTag(childPage, tag);
-                        if (contentResource != null) {
-                            MetaTagJcrUtils.writeMetaTags(contentResource, metaTag);
+                        if (contentResource == null) {
+                            LOGGER.warn("Content resource is empty for page " + childPage.getName());
+                            continue;
+                        }
 
-                            if (autoActivate) {
-                                resourceResolver.refresh();
-                                try {
-                                    replicator.replicate(resourceResolver.adaptTo(Session.class), ReplicationActionType.ACTIVATE, contentResource.getPath());
-                                    resourceResolver.commit();
-                                } catch (ReplicationException|PersistenceException e) {
-                                    LOGGER.warn("Could not auto activate " + contentResource.getPath(), e);
-                                }
-                            }
+                        MetaTagJcrUtils.writeMetaTags(contentResource, metaTag);
+
+                        if (!autoActivate) {
+                            LOGGER.warn("Autoactive is false");
+                            continue;
+                        }
+
+                        try {
+                            resourceResolver.refresh();
+                            replicator.replicate(resourceResolver.adaptTo(Session.class), ReplicationActionType.ACTIVATE, contentResource.getPath());
+                            resourceResolver.commit();
+                        } catch (NullPointerException|ReplicationException|PersistenceException e) {
+                            LOGGER.warn("Could not auto activate " + contentResource.getPath(), e);
                         }
                     }
                 }
@@ -163,14 +173,23 @@ public class SeoImportService implements Runnable {
         JsonParser jsonParser = new JsonParser();
         JsonElement jsonTree = jsonParser.parse(jsonResponse);
 
-        JsonArray tags = null;
-        if (jsonTree != null) {
-            tags = ((JsonObject) jsonTree).get("tags").getAsJsonArray();
+        if (jsonTree == null) {
+            LOGGER.warn("Seo api response should not be empty");
+            return null;
         }
-        return tags;
+
+        JsonObject json = ((JsonObject) jsonTree);
+
+        String status = json.get("status").getAsInt() + "";
+        if (!status.startsWith("2")) {
+            LOGGER.warn("Seo api is returning status: " + status);
+        }
+
+        return json.get("tags").getAsJsonArray();
     }
 
     private String executeGetDataRequest(String seoApiUrl) {
+        LOGGER.info("Requesting seo api url: " + seoApiUrl);
         String response = null;
         HttpClient httpClient = new HttpClient();
         HttpConnectionManagerParams params = new HttpConnectionManagerParams();
@@ -184,6 +203,7 @@ public class SeoImportService implements Runnable {
         httpMethodParams.setParameter("accept", "application/json");
         httpGet.setParams(httpMethodParams);
 
+        // TODO: for non exiting pages the status code is 200 but the json contains a status field which might be 404 ...
         try {
             int statusCode = httpClient.executeMethod(httpGet);
             if (statusCode == HTTP_OK) {
