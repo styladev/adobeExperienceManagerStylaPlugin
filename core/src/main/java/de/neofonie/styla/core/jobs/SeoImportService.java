@@ -25,6 +25,7 @@ import org.apache.sling.commons.scheduler.Scheduler;
 import org.apache.sling.jcr.api.SlingRepository;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.metatype.annotations.AttributeDefinition;
 import org.osgi.service.metatype.annotations.Designate;
@@ -45,6 +46,8 @@ import static java.net.HttpURLConnection.HTTP_OK;
 public class SeoImportService implements Runnable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SeoImportService.class);
+
+    private static final String SCHEDULER_JOB_NAME = "Styla Seo Import Service";
 
     @Reference
     private ResourceResolverFactory resourceResolverFactory;
@@ -89,29 +92,43 @@ public class SeoImportService implements Runnable {
 
     @Activate
     protected void activate(final Config config) {
+        LOGGER.info("Activate SeoImportService");
+        this.loadConfig(config);
+        this.startCronjob(config);
+    }
 
+    @Deactivate
+    protected void deactivate() {
+        LOGGER.info("Deactivate SeoImportService");
+        this.unscheduleCronjob();
+    }
+
+    private void loadConfig(final Config config) {
         String configuredContentRootPath = String.valueOf(config.contentRootPath());
         String templateType = String.valueOf(config.templateType());
         this.autoActivate = Boolean.valueOf(config.autoActivate());
         this.contentRootPath = (configuredContentRootPath != null) ? configuredContentRootPath : null;
         this.templateType = StringUtils.isNotEmpty(templateType) ? templateType : "/conf/styla/settings/wcm/templates/master";
-
-        this.startCronjob(config);
-
         LOGGER.info("configure: contentRootPath='{}''", this.contentRootPath);
     }
 
     private void startCronjob(final Config config) {
+        final String expression = config.scheduler_expression();
+        LOGGER.info(String.format("Scheduling SEO import service with cron expression %s", expression));
         try {
-            ScheduleOptions scheduleOptions = scheduler.EXPR(config.scheduler_expression());
+            ScheduleOptions scheduleOptions = scheduler.EXPR(expression);
             scheduleOptions.canRunConcurrently(false);
             scheduleOptions.config(Collections.emptyMap());
-            scheduleOptions.name("Styla Seo Import Service");
+            scheduleOptions.name(SCHEDULER_JOB_NAME);
             this.scheduler.schedule(this, scheduleOptions);
-            LOGGER.info("Added seo import service scheduler job");
         } catch (Exception e) {
-            LOGGER.error("Failed to add seo import service scheduler job", e);
+            LOGGER.error("Failed to schedule seo import service job", e);
         }
+    }
+
+    private void unscheduleCronjob() {
+        LOGGER.info("Unscheduling SEO import service");
+        this.scheduler.unschedule(SCHEDULER_JOB_NAME);
     }
 
     private ResourceResolver getResourceResolver() {
