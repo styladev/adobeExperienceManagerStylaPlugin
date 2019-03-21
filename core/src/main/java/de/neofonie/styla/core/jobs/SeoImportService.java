@@ -20,6 +20,8 @@ import org.apache.commons.httpclient.params.HttpConnectionManagerParams;
 import org.apache.commons.httpclient.params.HttpMethodParams;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.sling.api.resource.*;
+import org.apache.sling.commons.scheduler.ScheduleOptions;
+import org.apache.sling.commons.scheduler.Scheduler;
 import org.apache.sling.jcr.api.SlingRepository;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
@@ -49,6 +51,9 @@ public class SeoImportService implements Runnable {
 
     @Reference
     private Replicator replicator;
+
+    @Reference
+    private Scheduler scheduler;
 
     CloudServiceModel cloudServiceModel = new CloudServiceModel();
 
@@ -91,7 +96,22 @@ public class SeoImportService implements Runnable {
         this.contentRootPath = (configuredContentRootPath != null) ? configuredContentRootPath : null;
         this.templateType = StringUtils.isNotEmpty(templateType) ? templateType : "/conf/styla/settings/wcm/templates/master";
 
+        this.startCronjob(config);
+
         LOGGER.info("configure: contentRootPath='{}''", this.contentRootPath);
+    }
+
+    private void startCronjob(final Config config) {
+        try {
+            ScheduleOptions scheduleOptions = scheduler.EXPR(config.scheduler_expression());
+            scheduleOptions.canRunConcurrently(false);
+            scheduleOptions.config(Collections.emptyMap());
+            scheduleOptions.name("Styla Seo Import Service");
+            this.scheduler.schedule(this, scheduleOptions);
+            LOGGER.info("Added seo import service scheduler job");
+        } catch (Exception e) {
+            LOGGER.error("Failed to add seo import service scheduler job", e);
+        }
     }
 
     private ResourceResolver getResourceResolver() {
