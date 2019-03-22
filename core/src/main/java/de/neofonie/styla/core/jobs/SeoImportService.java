@@ -149,6 +149,7 @@ public class SeoImportService implements Runnable {
 
     @Override
     public void run() {
+        LOGGER.info("Import seo for styla pages");
         ResourceResolver resourceResolver = getResourceResolver();
         Page contentRootPage = getContentRootPage(resourceResolver);
 
