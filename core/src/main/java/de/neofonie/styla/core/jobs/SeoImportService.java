@@ -123,12 +123,11 @@ public class SeoImportService implements Runnable {
             for (Page childPage : pages) {
                 LOGGER.info("Processing page: " + childPage.getName() + " - " + childPage.getPath());
 
-                ValueMap properties = childPage.getProperties();
-
-                if (properties != null && !properties.containsKey("allowSeoImport")) {
-                    LOGGER.warn("Skip page due not allowedSeoImport");
+                if (!isSeoImportEnabled(childPage)) {
+                    LOGGER.warn("Skip page due disableSeoImport flag");
                     continue;
                 }
+
                 String seoApiUrl = cloudServiceModel.getSeoApiUrl(resourceResolver, contentRootPage);
                 seoApiUrl = seoApiUrl.replace("$URL", childPage.getName());
                 seoApiUrl = seoApiUrl.replace("$LANG", childPage.getLanguage().toString());
@@ -165,6 +164,21 @@ public class SeoImportService implements Runnable {
 
             }
         }
+    }
+
+    private boolean isSeoImportEnabled(Page page) {
+        ValueMap properties = page.getProperties();
+
+        try {
+            if (properties != null && properties.containsKey("disableSeoImport")) {
+                final Object propertyValue = properties.get("disableSeoImport");
+                return "false".equalsIgnoreCase(String.valueOf(propertyValue));
+            }
+        } catch(Exception e) {
+            LOGGER.warn("Failed to parse 'disableSeoImport' property, fallback to true");
+        }
+
+        return true;
     }
 
     private JsonArray getMetaData(String seoApiUrl) {
