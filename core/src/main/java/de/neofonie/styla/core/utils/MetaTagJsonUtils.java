@@ -1,17 +1,13 @@
 package de.neofonie.styla.core.utils;
 
-import com.day.cq.wcm.api.Page;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import de.neofonie.styla.core.models.SeoHeadTag;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class MetaTagJsonUtils {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(MetaTagJsonUtils.class);
-
-    public static MetaTag getMetaTag(Page childPage, JsonElement tag) {
+    public static MetaTag getMetaTag(SeoHeadTag tag) {
         JsonObject attributes = getTagAttributes(tag);
 
         MetaTag metaTag = new MetaTag();
@@ -42,18 +38,15 @@ public class MetaTagJsonUtils {
         return attribute;
     }
 
-    private static JsonObject getTagAttributes(JsonElement tag) {
-        JsonObject object = tag.getAsJsonObject();
-
-        JsonObject attributes = null;
-        if (object.has("attributes")) {
-            JsonElement attributesElement = object.get("attributes");
+    private static JsonObject getTagAttributes(SeoHeadTag tag) {
+        if (tag.getAttributes() != null) {
+            JsonObject attributesElement = tag.getAttributes();
             if (attributesElement != null) {
-                attributes = attributesElement.getAsJsonObject();
+                return attributesElement.getAsJsonObject();
             }
         }
 
-        return attributes;
+        return null;
     }
 
     public static class MetaTag {
