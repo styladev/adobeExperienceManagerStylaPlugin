@@ -30,13 +30,13 @@
                                 sling:resourceType="granite/ui/components/coral/foundation/container"
                                 class="aem-dialog--full-width">
                                 <items jcr:primaryType="nt:unstructured">
-                                    <allowSeoImport
+                                    <disableSeoImport
                                         jcr:primaryType="nt:unstructured"
                                         sling:resourceType="granite/ui/components/coral/foundation/form/checkbox"
-                                        text="Allow SEO import"
+                                        text="Disable SEO import"
                                         value="{Boolean}true"
                                         uncheckedValue="{Boolean}false"
-                                        name="./allowSeoImport"/>
+                                        name="./disableSeoImport"/>
                                     <requiredOgTags
                                         jcr:primaryType="nt:unstructured"
                                         jcr:title="Required Open Graph Tags"
