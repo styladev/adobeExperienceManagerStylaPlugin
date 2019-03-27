@@ -118,6 +118,7 @@ public class SeoImportService implements Runnable {
 
         if (contentRootPage != null) {
             List<Page> pages = new ArrayList();
+            pages.add(contentRootPage);
             PageUtils.recursivelySearchForPage(contentRootPage.listChildren(), pages, templateType);
             LOGGER.info(String.format("Found pages (%d)", pages.size()));
 
@@ -129,6 +130,7 @@ public class SeoImportService implements Runnable {
                     continue;
                 }
 
+                LOGGER.info("Page is valid for SEO injections, starting ....");
                 final String seoApiUrl = buildSeoApiUrl(resourceResolver, contentRootPage, childPage);
                 final Seo seo = fetchSeoData(seoApiUrl);
 
@@ -155,11 +157,11 @@ public class SeoImportService implements Runnable {
     }
 
     private String buildSeoApiUrl(final ResourceResolver resourceResolver, final Page rootPage, final Page currentPage) {
-        final String path = StringUtils.removeStart(currentPage.getPath(), contentRootPath);
+        final String path = StringUtils.removeStart(currentPage.getPath(), rootPage.getParent().getPath());
 
         return cloudServiceModel.getSeoApiUrl(resourceResolver, rootPage)
-                .replace("$URL", path)
-                .replace("$LANG", currentPage.getLanguage().toString());
+           .replace("$URL", path)
+           .replace("$LANG", currentPage.getLanguage().toString());
     }
 
     private Seo fetchSeoData(String seoApiUrl) {
