@@ -1,10 +1,10 @@
 package de.neofonie.styla.core.jobs;
 
-
 import com.day.cq.replication.ReplicationActionType;
 import com.day.cq.replication.ReplicationException;
 import com.day.cq.replication.Replicator;
 import com.day.cq.wcm.api.Page;
+import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import de.neofonie.styla.core.models.CloudServiceModel;
@@ -30,7 +30,6 @@ import org.slf4j.LoggerFactory;
 
 import javax.jcr.Session;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -92,7 +91,7 @@ public class SeoImportService implements Runnable {
         this.contentRootPath = (configuredContentRootPath != null) ? configuredContentRootPath : null;
         this.templateType = StringUtils.isNotEmpty(templateType) ? templateType : "/conf/styla/settings/wcm/templates/master";
 
-        LOGGER.info("configure: contentRootPath='{}''", this.contentRootPath);
+        LOGGER.info("configure: contentRootPath='{}'", this.contentRootPath);
     }
 
     private ResourceResolver getResourceResolver() {
@@ -116,33 +115,40 @@ public class SeoImportService implements Runnable {
         ResourceResolver resourceResolver = getResourceResolver();
         Page contentRootPage = getContentRootPage(resourceResolver);
 
-        if (contentRootPage != null) {
-            List<Page> pages = new ArrayList();
-            pages.add(contentRootPage);
-            PageUtils.recursivelySearchForPage(contentRootPage.listChildren(), pages, templateType);
-            LOGGER.info(String.format("Found pages (%d)", pages.size()));
+        if(contentRootPage == null) {
+            LOGGER.error("Failed to find content root page - aborting seo import service");
+            return;
+        }
 
-            for (Page childPage : pages) {
-                LOGGER.info(String.format("Processing page: %s on %s", childPage.getName(), childPage.getPath()));
+        final List<Page> pages = Lists.newArrayList();
+        pages.add(contentRootPage);
+        PageUtils.recursivelySearchForPage(contentRootPage.listChildren(), pages, templateType);
+        LOGGER.info(String.format("Found pages (%d)", pages.size()));
 
-                if (!isSeoImportEnabled(childPage)) {
-                    LOGGER.warn("Skip page due disableSeoImport flag");
-                    continue;
-                }
+        for (final Page childPage : pages) {
+            LOGGER.info(String.format("Processing page: %s on %s", childPage.getName(), childPage.getPath()));
 
-                LOGGER.info("Page is valid for SEO injections, starting ....");
-                final String seoApiUrl = buildSeoApiUrl(resourceResolver, contentRootPage, childPage);
-                final Seo seo = fetchSeoData(seoApiUrl);
-
-                applySeoData(seo, childPage, resourceResolver);
-
-                LOGGER.info(String.format("Finished page: %s on %s", childPage.getName(), childPage.getPath()));
+            if (!isSeoImportEnabled(childPage)) {
+                LOGGER.warn("Skip page due disableSeoImport flag");
+                continue;
             }
+
+            final String seoApiUrl = buildSeoApiUrl(resourceResolver, contentRootPage, childPage);
+            if (seoApiUrl != null) {
+                final Seo seo = fetchSeoData(seoApiUrl);
+                if (seo != null) {
+                    applySeoData(seo, childPage, resourceResolver);
+                } else {
+                    LOGGER.warn(String.format("Fetched seo is empty for page %s - no seo data is applied", childPage.getName()));
+                }
+            }
+
+            LOGGER.info(String.format("Finished page: %s on %s", childPage.getName(), childPage.getPath()));
         }
     }
 
     private boolean isSeoImportEnabled(Page page) {
-        ValueMap properties = page.getProperties();
+        final ValueMap properties = page.getProperties();
 
         try {
             if (properties != null && properties.containsKey("disableSeoImport")) {
@@ -159,23 +165,27 @@ public class SeoImportService implements Runnable {
     private String buildSeoApiUrl(final ResourceResolver resourceResolver, final Page rootPage, final Page currentPage) {
         final String path = StringUtils.removeStart(currentPage.getPath(), rootPage.getParent().getPath());
 
+        if (path == null) {
+            return null;
+        }
+
         return cloudServiceModel.getSeoApiUrl(resourceResolver, rootPage)
            .replace("$URL", path)
            .replace("$LANG", currentPage.getLanguage().toString());
     }
 
     private Seo fetchSeoData(String seoApiUrl) {
-        String jsonResponse = executeGetDataRequest(seoApiUrl);
+        final String jsonResponse = executeGetDataRequest(seoApiUrl);
 
         if (jsonResponse == null) {
             LOGGER.warn("Seo api response should not be empty");
             return null;
         }
 
-        Gson gson = new GsonBuilder().create();
-        Seo seo = gson.fromJson(jsonResponse, Seo.class);
+        final Gson gson = new GsonBuilder().create();
+        final Seo seo = gson.fromJson(jsonResponse, Seo.class);
 
-        String status = seo.getStatus() + "";
+        final String status = seo.getStatus() + "";
         if (!status.startsWith("2")) {
             LOGGER.warn(String.format("Seo api is returning status: %s", status));
         }
@@ -191,7 +201,7 @@ public class SeoImportService implements Runnable {
 
         LOGGER.info(String.format("Start applying seo to page: %s on %s", page.getName(), page.getPath()));
 
-        Resource resource = page.getContentResource();
+        final Resource resource = page.getContentResource();
         SeoUtils.writeSeoToResource(seo, resource);
 
         if (!autoActivate) {

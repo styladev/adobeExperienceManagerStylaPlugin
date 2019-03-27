@@ -4,7 +4,7 @@
     <groupId>de.neofonie.styla</groupId>
     <artifactId>styla</artifactId>
     <packaging>pom</packaging>
-    <version>0.9.1</version>
+    <version>0.10.0</version>
     <description>styla</description>
 
     <modules>
