@@ -11,12 +11,15 @@ import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.ValueMap;
 import org.apache.sling.models.annotations.DefaultInjectionStrategy;
 import org.apache.sling.models.annotations.Model;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 
-
 @Model(adaptables = {Resource.class, SlingHttpServletRequest.class}, defaultInjectionStrategy = DefaultInjectionStrategy.OPTIONAL)
 public class CloudServiceModel {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(CloudServiceModel.class);
 
     @Inject
     private ResourceResolver resourceResolver;
@@ -25,9 +28,7 @@ public class CloudServiceModel {
     private Page currentPage;
 
     public String getSeoApiUrl(ResourceResolver resourceResolver, Page contentRootPage) {
-        String seoApiUrl = null;
-        seoApiUrl = getCloudServiceProperty(resourceResolver, contentRootPage);
-        return seoApiUrl;
+        return getCloudServiceProperty(resourceResolver, contentRootPage);
     }
 
     public String getSeoApiUrl() {
@@ -75,21 +76,20 @@ public class CloudServiceModel {
     }
 
     private String getCloudServiceProperty(ResourceResolver resourceResolver, Page contentRootPage) {
-        String seoApiUrl = null;
-        String property = "seoApiUrl";
-        String cloudServiceConfiguration = getCloudServiceConfiguration(contentRootPage);
+        final String property = "seoApiUrl";
+        final String cloudServiceConfiguration = getCloudServiceConfiguration(contentRootPage);
 
-        if (StringUtils.isNotEmpty(cloudServiceConfiguration)) {
-            Resource cloudServiceResource = resourceResolver.getResource(cloudServiceConfiguration + "/" + JcrConstants.JCR_CONTENT);
-
-            if (cloudServiceResource != null) {
-                ValueMap properties = cloudServiceResource.getValueMap();
-
-                if (properties != null) {
-                    seoApiUrl = properties.get(property, "");
-                }
-            }
+        if (!StringUtils.isNotEmpty(cloudServiceConfiguration)) {
+            LOGGER.warn(String.format("Failed to get cloud service property: %s", property));
+            return null;
         }
-        return seoApiUrl;
+
+        final Resource cloudServiceResource = resourceResolver.getResource(cloudServiceConfiguration + "/" + JcrConstants.JCR_CONTENT);
+        if (cloudServiceResource == null) {
+            LOGGER.warn(String.format("Failed to get cloud service resource for property: %s", property));
+            return null;
+        }
+
+        return cloudServiceResource.getValueMap().get(property, "");
     }
 }
