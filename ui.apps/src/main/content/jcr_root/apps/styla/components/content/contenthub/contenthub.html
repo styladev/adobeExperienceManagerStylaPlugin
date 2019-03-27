@@ -2,4 +2,10 @@
 <sly data-sly-call="${templates.placeholder @ isEmpty = !wcmmode.disabled}">
     Contenthub StylaMagazine
 </sly>
-<div id="stylaMagazine"></div>
+<div id="stylaMagazine">
+    <div data-sly-use.attrs="${'getAttributes.js' @ names = ['seobody']}"
+         data-sly-list="${attrs}"
+         data-sly-unwrap>
+        ${attrs[item] @ context='html'}
+    </div>
+</div>

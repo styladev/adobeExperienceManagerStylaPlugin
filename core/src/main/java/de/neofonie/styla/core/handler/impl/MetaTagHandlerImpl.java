@@ -17,6 +17,7 @@ import java.util.List;
  */
 @Model(adaptables = {SlingHttpServletRequest.class, Resource.class}, adapters = {MetaTagHandler.class})
 public class MetaTagHandlerImpl implements MetaTagHandler {
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(MetaTagHandlerImpl.class);
 
 	/**
@@ -35,10 +36,11 @@ public class MetaTagHandlerImpl implements MetaTagHandler {
 				MetaTag metaTag = metaTagResource.adaptTo(MetaTag.class);
 
 				if (metaTag != null) {
+					LOGGER.debug(String.format("Found meta tag: %s", metaTag.getTagLabel()));
 					metaTagList.add(metaTag);
 				}
 				else {
-					LOGGER.debug("No optional meta tags available for " + metaTagResource.getPath());
+					LOGGER.debug(String.format("No optional meta tags available for %s", metaTagResource.getPath()));
 				}
 			}
 		}
