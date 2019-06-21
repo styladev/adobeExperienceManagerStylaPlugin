@@ -39,7 +39,6 @@ import static java.net.HttpURLConnection.HTTP_OK;
 
 @Component(service = Runnable.class)
 @Designate(ocd = SeoImportService.Config.class, factory = true)
-
 public class SeoImportService implements Runnable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SeoImportService.class);
@@ -112,8 +111,25 @@ public class SeoImportService implements Runnable {
 
     @Override
     public void run() {
+        final String[] templateTypes = templateType.split("\\|");
+        final String[] contentRootPaths = contentRootPath.split("\\|");
+
+        if (templateTypes.length != contentRootPaths.length) {
+            LOGGER.error("The templateType and contentRootPath should not have different length for piped values");
+            return;
+        }
+
+        for (int i = 0; i < templateTypes.length; i++) {
+            importData(templateTypes[i], contentRootPaths[i]);
+        }
+    }
+
+    private void importData(final String templateType, final String contentRootPath) {
+        LOGGER.info(String.format("Start importing seo data for path=%s and template=%s",
+                contentRootPath, templateType));
+
         ResourceResolver resourceResolver = getResourceResolver();
-        Page contentRootPage = getContentRootPage(resourceResolver);
+        Page contentRootPage = getContentRootPage(resourceResolver, contentRootPath);
 
         if(contentRootPage == null) {
             LOGGER.error("Failed to find content root page - aborting seo import service");
@@ -145,6 +161,8 @@ public class SeoImportService implements Runnable {
 
             LOGGER.info(String.format("Finished page: %s on %s", childPage.getName(), childPage.getPath()));
         }
+
+        LOGGER.info("Finish importing seo data");
     }
 
     private boolean isSeoImportEnabled(Page page) {
@@ -251,8 +269,8 @@ public class SeoImportService implements Runnable {
     }
 
 
-    private Page getContentRootPage(ResourceResolver resourceResolver) {
-        Resource contentRootResource = getContentRootResource(resourceResolver);
+    private Page getContentRootPage(final ResourceResolver resourceResolver, final String contentRootPath) {
+        final Resource contentRootResource = getContentRootResource(resourceResolver, contentRootPath);
         if (contentRootResource != null) {
             return contentRootResource.adaptTo(Page.class);
         }
@@ -265,7 +283,7 @@ public class SeoImportService implements Runnable {
      * @param resourceResolver
      * @return Resource content resource when configured path can be resolved, otherwise null
      */
-    private Resource getContentRootResource(ResourceResolver resourceResolver) {
+    private Resource getContentRootResource(final ResourceResolver resourceResolver, final String contentRootPath) {
         if (StringUtils.isNotEmpty(contentRootPath) && resourceResolver != null) {
             return resourceResolver.getResource(contentRootPath);
         }
