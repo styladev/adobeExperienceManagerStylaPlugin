@@ -137,7 +137,6 @@ public class SeoImportService implements Runnable {
         }
 
         final List<Page> pages = Lists.newArrayList();
-        pages.add(contentRootPage);
         PageUtils.recursivelySearchForPage(contentRootPage.listChildren(), pages, templateType);
         LOGGER.info(String.format("Found pages (%d)", pages.size()));
 
@@ -181,7 +180,7 @@ public class SeoImportService implements Runnable {
     }
 
     private String buildSeoApiUrl(final ResourceResolver resourceResolver, final Page rootPage, final Page currentPage) {
-        final String path = StringUtils.removeStart(currentPage.getPath(), rootPage.getParent().getPath());
+        final String path = StringUtils.removeStart(currentPage.getPath(), rootPage.getPath());
 
         if (path == null) {
             return null;
