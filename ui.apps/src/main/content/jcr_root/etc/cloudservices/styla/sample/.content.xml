@@ -11,6 +11,7 @@
         jcr:primaryType="cq:PageContent"
         jcr:title="Client sample"
         sling:resourceType="acs/styla/components/stylapage"
-        script="//client-scripts.stage.eu.magalog.net/scripts/clients/ci-magento19.js"
-        seoApiUrl="http://seoapi.stage.eu.magalog.net/clients/ci-magento19?url=$URL"/>
+        script="//client-scripts.stage.eu.magalog.net/scripts/clients/aem-test.js"
+        seoApiUrl="http://seoapi.stage.eu.magalog.net/clients/aem-test?url=$URL"
+        removalScript="//configureMe"/>
 </jcr:root>

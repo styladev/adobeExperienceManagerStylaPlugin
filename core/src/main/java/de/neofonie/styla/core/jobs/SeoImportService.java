@@ -4,6 +4,7 @@ import com.day.cq.replication.ReplicationActionType;
 import com.day.cq.replication.ReplicationException;
 import com.day.cq.replication.Replicator;
 import com.day.cq.wcm.api.Page;
+import com.day.cq.wcm.api.PageManager;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -31,6 +32,7 @@ import org.slf4j.LoggerFactory;
 import javax.jcr.Session;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -60,6 +62,7 @@ public class SeoImportService implements Runnable {
     @Reference
     private SlingRepository repository;
 
+    private String[] paths;
     private String contentRootPath;
     private boolean autoActivate;
     private String templateType;
@@ -70,14 +73,15 @@ public class SeoImportService implements Runnable {
         @AttributeDefinition(name = "Cron-job expression")
         String scheduler_expression() default "0 * * ? * *";
 
-        @AttributeDefinition(name = "Template Type", description = "Import works only for pages with this template type")
-        String templateType() default "/conf/styla/settings/wcm/templates/master";
-
         @AttributeDefinition(name = "Content Root Path", description = "Root path for the styla relating content")
         String contentRootPath() default "/content";
 
         @AttributeDefinition(name = "Auto-Activate", description = "If checked, pages with imported SEO data will be activated automatically")
         boolean autoActivate() default true;
+
+        @AttributeDefinition(name = "Paths", description = "Colon seperated list of path expressions. Use * for directory or filename patterns.")
+        String paths() default "";
+
 
     }
 
@@ -86,12 +90,15 @@ public class SeoImportService implements Runnable {
     protected void activate(final Config config) {
 
         String configuredContentRootPath = String.valueOf(config.contentRootPath());
-        String templateType = String.valueOf(config.templateType());
+
         this.autoActivate = Boolean.valueOf(config.autoActivate());
         this.contentRootPath = (configuredContentRootPath != null) ? configuredContentRootPath : null;
-        this.templateType = StringUtils.isNotEmpty(templateType) ? templateType : "/conf/styla/settings/wcm/templates/master";
+        this.paths = config.paths().split(":");
+        for(String path:paths)  //convert to usable patterns
+            path.replaceAll("\\*","\\.*");
 
         LOGGER.info("configure: contentRootPath='{}'", this.contentRootPath);
+        LOGGER.info("configured: paths='{}'", this.paths);
     }
 
     private ResourceResolver getResourceResolver() {
@@ -115,14 +122,14 @@ public class SeoImportService implements Runnable {
         ResourceResolver resourceResolver = getResourceResolver();
         Page contentRootPage = getContentRootPage(resourceResolver);
 
-        if(contentRootPage == null) {
+        if (contentRootPage == null) {
             LOGGER.error("Failed to find content root page - aborting seo import service");
             return;
         }
 
         final List<Page> pages = Lists.newArrayList();
         pages.add(contentRootPage);
-        PageUtils.recursivelySearchForPage(contentRootPage.listChildren(), pages, templateType);
+        PageUtils.recursivelySearchForPage(contentRootPage.listChildren(), pages, paths);
         LOGGER.info(String.format("Found pages (%d)", pages.size()));
 
         for (final Page childPage : pages) {
@@ -136,7 +143,7 @@ public class SeoImportService implements Runnable {
             final String seoApiUrl = buildSeoApiUrl(resourceResolver, contentRootPage, childPage);
             if (seoApiUrl != null) {
                 final Seo seo = fetchSeoData(seoApiUrl);
-                if (seo != null) {
+                if (seo != null && seo.getResponseCode() != 404) {
                     applySeoData(seo, childPage, resourceResolver);
                 } else {
                     LOGGER.warn(String.format("Fetched seo is empty for page %s - no seo data is applied", childPage.getName()));
@@ -163,15 +170,24 @@ public class SeoImportService implements Runnable {
     }
 
     private String buildSeoApiUrl(final ResourceResolver resourceResolver, final Page rootPage, final Page currentPage) {
-        final String path = StringUtils.removeStart(currentPage.getPath(), rootPage.getParent().getPath());
+
+        final String path = (rootPage == null)?
+                currentPage.getPath():
+                StringUtils.removeStart(currentPage.getPath(), rootPage.getPath());
 
         if (path == null) {
             return null;
         }
 
-        return cloudServiceModel.getSeoApiUrl(resourceResolver, rootPage)
-           .replace("$URL", path)
-           .replace("$LANG", currentPage.getLanguage().toString());
+        final String lang = (currentPage.getLanguage() == null)? "en":currentPage.getLanguage().toString();
+        final String url = cloudServiceModel.getSeoApiUrl(resourceResolver, rootPage);
+
+        if (url == null || url.trim().isEmpty())
+            return null;
+
+        return url
+                .replace("$URL", path)
+                .replace("$LANG", lang);
     }
 
     private Seo fetchSeoData(String seoApiUrl) {
@@ -252,23 +268,13 @@ public class SeoImportService implements Runnable {
 
 
     private Page getContentRootPage(ResourceResolver resourceResolver) {
-        Resource contentRootResource = getContentRootResource(resourceResolver);
+        if (StringUtils.isEmpty(contentRootPath) && resourceResolver == null)
+            return null;
+        Resource contentRootResource = resourceResolver.getResource(contentRootPath);
         if (contentRootResource != null) {
             return contentRootResource.adaptTo(Page.class);
         }
         return null;
     }
 
-    /**
-     * Resolve content root resource as configured, e.g. /content/styla/en
-     *
-     * @param resourceResolver
-     * @return Resource content resource when configured path can be resolved, otherwise null
-     */
-    private Resource getContentRootResource(ResourceResolver resourceResolver) {
-        if (StringUtils.isNotEmpty(contentRootPath) && resourceResolver != null) {
-            return resourceResolver.getResource(contentRootPath);
-        }
-        return null;
-    }
 }

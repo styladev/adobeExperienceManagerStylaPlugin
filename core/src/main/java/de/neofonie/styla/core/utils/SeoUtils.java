@@ -93,7 +93,7 @@ public class SeoUtils {
             final ModifiableValueMap properties = bodyResource.adaptTo(ModifiableValueMap.class);
             if (properties != null) {
                 properties.put("body", body);
-                resourceResolver.commit();
+//                resourceResolver.commit();
             }
         } catch (PersistenceException e) {
             LOGGER.error("Could not create seo body node for " + contentResource.getPath() + "/body", e);
@@ -104,7 +104,7 @@ public class SeoUtils {
         try {
             Resource metaTagsResource = ResourceUtil.getOrCreateResource(resourceResolver, contentResource.getPath() + "/metatags", Collections.emptyMap(), null, true);
             resourceResolver.delete(metaTagsResource);
-            resourceResolver.commit();
+//            resourceResolver.commit();
         } catch (PersistenceException e) {
             LOGGER.error("Could not delete metatags node for " + contentResource.getPath() + "/metatags", e);
         }

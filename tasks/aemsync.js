@@ -20,8 +20,8 @@ const aemsync = require("aemsync-weily"),
     ],
     targets = {
         local: [
-            "http://admin:admin@localhost:3502",// author
-            "http://admin:admin@localhost:3503",// publisher
+            "http://admin:admin@localhost:4502",// author
+            "http://admin:admin@localhost:4503",// publisher
         ],
     };
 

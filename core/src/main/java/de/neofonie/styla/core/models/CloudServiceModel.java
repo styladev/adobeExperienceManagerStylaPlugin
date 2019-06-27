@@ -39,6 +39,10 @@ public class CloudServiceModel {
         return getCloudServiceProperty("script");
     }
 
+    public String getRemovalScript() {
+        return getCloudServiceProperty("removalScript");
+    }
+
     private String getCloudServiceConfiguration(Page contentRootPage) {
         String cloudServiceConfiguration = null;
 
