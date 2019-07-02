@@ -19,10 +19,10 @@
                 sling:resourceType="granite/ui/components/coral/foundation/tabs"
                 size="L">
                 <items jcr:primaryType="nt:unstructured">
-                    <metatags
+                    <styla
                         cq:showOnCreate="{Boolean}true"
                         jcr:primaryType="nt:unstructured"
-                        jcr:title="Meta Tags"
+                        jcr:title="Styla"
                         sling:resourceType="granite/ui/components/coral/foundation/fixedcolumns">
                         <items jcr:primaryType="nt:unstructured">
                             <column
@@ -37,9 +37,9 @@
                                         value="{Boolean}true"
                                         uncheckedValue="{Boolean}false"
                                         name="./disableSeoImport"/>
-                                    <requiredOgTags
+                                    <metaTags
                                         jcr:primaryType="nt:unstructured"
-                                        jcr:title="Required Open Graph Tags"
+                                        jcr:title="Meta Tags"
                                         sling:resourceType="granite/ui/components/coral/foundation/form/fieldset">
                                         <items jcr:primaryType="nt:unstructured">
                                             <field
@@ -47,6 +47,16 @@
                                                 jcr:primaryType="nt:unstructured"
                                                 sling:resourceType="granite/ui/components/coral/foundation/form/fieldset">
                                                 <items jcr:primaryType="nt:unstructured">
+                                                    <canonical
+                                                        jcr:primaryType="nt:unstructured"
+                                                        sling:resourceType="granite/ui/components/coral/foundation/form/textfield"
+                                                        fieldLabel="canonical"
+                                                        name="./canonical"/>
+                                                    <robots
+                                                        jcr:primaryType="nt:unstructured"
+                                                        sling:resourceType="granite/ui/components/coral/foundation/form/textfield"
+                                                        fieldLabel="robots"
+                                                        name="./robots"/>
                                                     <ogTitle
                                                         jcr:primaryType="nt:unstructured"
                                                         sling:resourceType="granite/ui/components/coral/foundation/form/textfield"
@@ -67,58 +77,29 @@
                                                         sling:resourceType="granite/ui/components/coral/foundation/form/textfield"
                                                         fieldLabel="og:image"
                                                         name="./ogImage"/>
-                                                </items>
-                                            </field>
-                                        </items>
-                                    </requiredOgTags>
-                                    <optional
-                                        jcr:primaryType="nt:unstructured"
-                                        jcr:title="Optional Meta Tags"
-                                        sling:resourceType="granite/ui/components/coral/foundation/form/fieldset">
-                                        <items jcr:primaryType="nt:unstructured">
-                                            <field
-                                                cq:showOnCreate="{Boolean}true"
-                                                jcr:primaryType="nt:unstructured"
-                                                sling:resourceType="granite/ui/components/coral/foundation/form/fieldset">
-                                                <items jcr:primaryType="nt:unstructured">
-                                                    <multi
+                                                    <ogImageWidth
                                                         jcr:primaryType="nt:unstructured"
-                                                        sling:resourceType="granite/ui/components/coral/foundation/form/multifield"
-                                                        addItemLabel="Add meta tag item"
-                                                        composite="{Boolean}true">
-                                                        <field
-                                                            jcr:primaryType="nt:unstructured"
-                                                            sling:resourceType="granite/ui/components/foundation/container"
-                                                            name="./metatags">
-                                                            <items jcr:primaryType="nt:unstructured">
-                                                                <label
-                                                                    jcr:primaryType="nt:unstructured"
-                                                                    sling:resourceType="granite/ui/components/coral/foundation/form/textfield"
-                                                                    fieldLabel="Tag label"
-                                                                    name="./tagLabel"/>
-                                                                <value
-                                                                    jcr:primaryType="nt:unstructured"
-                                                                    sling:resourceType="granite/ui/components/coral/foundation/form/textfield"
-                                                                    fieldLabel="Tag value"
-                                                                    name="./tagValue"/>
-                                                                <isProperty
-                                                                    jcr:primaryType="nt:unstructured"
-                                                                    sling:resourceType="granite/ui/components/coral/foundation/form/checkbox"
-                                                                    text="Is property tag"
-                                                                    value="{Boolean}true"
-                                                                    uncheckedValue="{Boolean}false"
-                                                                    name="./isProperty"/>
-                                                            </items>
-                                                        </field>
-                                                    </multi>
+                                                        sling:resourceType="granite/ui/components/coral/foundation/form/textfield"
+                                                        fieldLabel="og:image:width"
+                                                        name="./ogImageWidth"/>
+                                                    <ogImageHeight
+                                                        jcr:primaryType="nt:unstructured"
+                                                        sling:resourceType="granite/ui/components/coral/foundation/form/textfield"
+                                                        fieldLabel="og:image:height"
+                                                        name="./ogImageHeight"/>
+                                                    <twitterTitle
+                                                        jcr:primaryType="nt:unstructured"
+                                                        sling:resourceType="granite/ui/components/coral/foundation/form/textfield"
+                                                        fieldLabel="twitter:title"
+                                                        name="./twitterTitle"/>
                                                 </items>
                                             </field>
                                         </items>
-                                    </optional>
+                                    </metaTags>
                                 </items>
                             </column>
                         </items>
-                    </metatags>
+                    </styla>
                 </items>
             </tabs>
         </items>

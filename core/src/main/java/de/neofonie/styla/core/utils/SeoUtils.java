@@ -1,9 +1,7 @@
 package de.neofonie.styla.core.utils;
 
-import com.google.common.collect.Iterators;
 import de.neofonie.styla.core.models.Seo;
 import de.neofonie.styla.core.models.SeoHeadTag;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.sling.api.resource.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,9 +28,9 @@ public class SeoUtils {
         }
 
         Map<String, Object> properties = new HashMap<>();
-        removeMetaTags(resource, resourceResolver);
-        writeMetaTags(seo, resource, properties);
+        writeMetaTagsToProperties(seo, properties);
         updateSeoBodyResource(resource, resourceResolver, seo.getHtml().getBody());
+        modifiableValueMap.putAll(properties);
 
         try {
             resourceResolver.commit();
@@ -41,7 +39,7 @@ public class SeoUtils {
         }
     }
 
-    private static void writeMetaTags(final Seo seo, final Resource resource, final Map<String, Object> properties) {
+    private static void writeMetaTagsToProperties(final Seo seo, final Map<String, Object> properties) {
         if (seo == null || seo.getTags() == null || seo.getTags().size() == 0) {
             LOGGER.warn("Couldn't find meta tags");
             return;
@@ -51,40 +49,81 @@ public class SeoUtils {
         while (iterator.hasNext()) {
             final SeoHeadTag tag = iterator.next();
             LOGGER.info(String.format("Applying seo tag %s with %s", tag.getTag(), tag.toString()));
-
-            final MetaTagJsonUtils.MetaTag metaTag = MetaTagJsonUtils.getMetaTag(tag);
-            if (metaTag != null) {
-                SeoUtils.writeMetaTag(resource, properties, metaTag);
-            }
+            writeMetaTag(tag, properties);
         }
     }
 
-    public static void writeMetaTag(final Resource contentResource, final Map<String, Object> properties, final MetaTagJsonUtils.MetaTag metaTag) {
-        if (contentResource == null) {
-            LOGGER.error("Content resource is empty");
+    private static void writeMetaTag(final SeoHeadTag tag, final Map<String, Object> properties) {
+        if (tag == null) {
             return;
         }
 
-        if (metaTag == null) {
-            LOGGER.warn("Invalid meta tag found");
-            return;
-        }
-
-        final ResourceResolver resourceResolver = contentResource.getResourceResolver();
-        final ModifiableValueMap modifiableValueMap = contentResource.adaptTo(ModifiableValueMap.class);
-
-        if (modifiableValueMap != null) {
-            final Map<String, Object> currentProperties = new HashMap<>();
-
-            checkForOpenGraphTags(metaTag, currentProperties);
-
-            if (currentProperties.size() == 0) {
-                checkForOtherTags(contentResource, resourceResolver, metaTag, currentProperties);
-            } else {
-                modifiableValueMap.putAll(currentProperties);
+        try {
+            // canonical
+            if ("link".equalsIgnoreCase(tag.getTag()) && tag.getAttributes() != null &&
+                    tag.getAttributes().has("rel") &&
+                    "canonical".equalsIgnoreCase(tag.getAttributes().get("rel").toString())) {
+                properties.put("stylaCanonical", tag.getAttributes().get("href").toString());
             }
-        }
 
+            // robots
+            if ("meta".equalsIgnoreCase(tag.getTag()) && tag.getAttributes() != null &&
+                    tag.getAttributes().has("name") &&
+                    "robots".equalsIgnoreCase(tag.getAttributes().get("name").toString())) {
+                properties.put("stylaRobots", tag.getAttributes().get("content").toString());
+            }
+
+            // og:title
+            if ("meta".equalsIgnoreCase(tag.getTag()) && tag.getAttributes() != null &&
+                    tag.getAttributes().has("property") &&
+                    "og:title".equalsIgnoreCase(tag.getAttributes().get("property").toString())) {
+                properties.put("stylaOgTitle", tag.getAttributes().get("content").toString());
+            }
+
+            // og:type
+            if ("meta".equalsIgnoreCase(tag.getTag()) && tag.getAttributes() != null &&
+                    tag.getAttributes().has("property") &&
+                    "og:type".equalsIgnoreCase(tag.getAttributes().get("property").toString())) {
+                properties.put("stylaOgType", tag.getAttributes().get("content").toString());
+            }
+
+            // og:url
+            if ("meta".equalsIgnoreCase(tag.getTag()) && tag.getAttributes() != null &&
+                    tag.getAttributes().has("property") &&
+                    "og:url".equalsIgnoreCase(tag.getAttributes().get("property").toString())) {
+                properties.put("stylaOgUrl", tag.getAttributes().get("content").toString());
+            }
+
+            // og:image
+            if ("meta".equalsIgnoreCase(tag.getTag()) && tag.getAttributes() != null &&
+                    tag.getAttributes().has("property") &&
+                    "og:image".equalsIgnoreCase(tag.getAttributes().get("property").toString())) {
+                properties.put("stylaOgImage", tag.getAttributes().get("content").toString());
+            }
+
+            // og:image:width
+            if ("meta".equalsIgnoreCase(tag.getTag()) && tag.getAttributes() != null &&
+                    tag.getAttributes().has("property") &&
+                    "og:image:width".equalsIgnoreCase(tag.getAttributes().get("property").toString())) {
+                properties.put("stylaOgImageWidth", tag.getAttributes().get("content").toString());
+            }
+
+            // og:image:height
+            if ("meta".equalsIgnoreCase(tag.getTag()) && tag.getAttributes() != null &&
+                    tag.getAttributes().has("property") &&
+                    "og:image:height".equalsIgnoreCase(tag.getAttributes().get("property").toString())) {
+                properties.put("stylaOgImageHeight", tag.getAttributes().get("content").toString());
+            }
+
+            // twitter:title
+            if ("meta".equalsIgnoreCase(tag.getTag()) && tag.getAttributes() != null &&
+                    tag.getAttributes().has("property") &&
+                    "twitter:title".equalsIgnoreCase(tag.getAttributes().get("property").toString())) {
+                properties.put("stylaTwitterTitle", tag.getAttributes().get("content").toString());
+            }
+        } catch(Exception e) {
+            LOGGER.error("Failed to set meta tag", e);
+        }
     }
 
     private static void updateSeoBodyResource(final Resource contentResource, final ResourceResolver resourceResolver, final String body) {
@@ -97,49 +136,6 @@ public class SeoUtils {
             }
         } catch (PersistenceException e) {
             LOGGER.error("Could not create seo body node for " + contentResource.getPath() + "/body", e);
-        }
-    }
-
-    private static void removeMetaTags(Resource contentResource, ResourceResolver resourceResolver) {
-        try {
-            Resource metaTagsResource = ResourceUtil.getOrCreateResource(resourceResolver, contentResource.getPath() + "/metatags", Collections.emptyMap(), null, true);
-            resourceResolver.delete(metaTagsResource);
-            resourceResolver.commit();
-        } catch (PersistenceException e) {
-            LOGGER.error("Could not delete metatags node for " + contentResource.getPath() + "/metatags", e);
-        }
-    }
-
-    private static void checkForOtherTags(Resource contentResource, ResourceResolver resourceResolver, MetaTagJsonUtils.MetaTag metaTag, Map<String, Object> properties) {
-        try {
-            Resource metaTagsResource = ResourceUtil.getOrCreateResource(resourceResolver, contentResource.getPath() + "/metatags", Collections.emptyMap(), null, true);
-
-            Iterator<Resource> resourceIterator = metaTagsResource.listChildren();
-            int numberOfMetaTags = Iterators.size(resourceIterator);
-
-            boolean isProperty = StringUtils.isNotEmpty(metaTag.getProperty());
-            properties.put("tagLabel", isProperty ? metaTag.getProperty() : metaTag.getName());
-            properties.put("tagValue", metaTag.getContent());
-            properties.put("isProperty", isProperty);
-
-            ResourceUtil.getOrCreateResource(resourceResolver, (metaTagsResource.getPath() + "/item" + String.valueOf(numberOfMetaTags)), properties, null, true);
-        } catch (PersistenceException e) {
-            LOGGER.error("Could not create metatags node for " + contentResource.getPath() + "/metatags", e);
-        }
-    }
-
-    private static void checkForOpenGraphTags(MetaTagJsonUtils.MetaTag metaTag, Map<String, Object> properties) {
-        if (StringUtils.equals(metaTag.getProperty(), "og:type") && metaTag.getContent() != null) {
-            properties.put("ogType", metaTag.getContent());
-        }
-        if (StringUtils.equals(metaTag.getProperty(), "og:title") && metaTag.getContent() != null) {
-            properties.put("ogTitle", metaTag.getContent());
-        }
-        if (StringUtils.equals(metaTag.getProperty(), "og:url") && metaTag.getContent() != null) {
-            properties.put("ogUrl", metaTag.getContent());
-        }
-        if (StringUtils.equals(metaTag.getProperty(), "og:image") && metaTag.getContent() != null) {
-            properties.put("ogImage", metaTag.getContent());
         }
     }
 }

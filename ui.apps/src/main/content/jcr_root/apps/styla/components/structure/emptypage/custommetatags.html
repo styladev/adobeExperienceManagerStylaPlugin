@@ -1,15 +1,13 @@
-<sly data-sly-use.model="de.neofonie.styla.core.controller.StylaSEO" />
+<link data-sly-test.stylaCanonical="${properties.stylaCanonical}" rel="canonical" href="${stylaCanonical}" />
+<meta data-sly-test.stylaRobots="${properties.stylaRobots}" name="robots" content="${stylaRobots}" />
+<meta data-sly-test.stylaOgTitle="${properties.stylaOgTitle}" property="og:title" content="${stylaOgTitle}" />
+<meta data-sly-test.stylaOgType="${properties.stylaOgType}" property="og:type" content="${stylaOgType}" />
+<meta data-sly-test.stylaOgUrl="${properties.stylaOgUrl}" property="og:url" content="${stylaOgUrl}" />
+<meta data-sly-test.stylaOgImage="${properties.stylaOgImage}" property="og:image" content="${stylaOgImage}" />
+<meta data-sly-test.stylaOgImageWidth="${properties.stylaOgImageWidth}" property="og:image:width" content="${stylaOgImageWidth}" />
+<meta data-sly-test.stylaOgImageHeight="${properties.stylaOgImageHeight}" property="og:image:Height" content="${stylaOgImageHeight}" />
+<meta data-sly-test.stylaTwitterTitle="${properties.stylaTwitterTitle}" property="twitter:title" content="${stylaTwitterTitle}" />
 
-    <meta data-sly-test.ogTitle="${properties.ogTitle}" property="og:title" content="${ogTitle}" />
-    <meta data-sly-test.ogType="${properties.ogType}" property="og:type" content="${ogType}" />
-    <meta data-sly-test.ogUrl="${properties.ogUrl}" property="og:url" content="${ogUrl}" />
-    <meta data-sly-test.ogImage="${properties.ogImage}" property="og:image" content="${ogImage}" />
-
-<sly data-sly-list.metaTags="${model.getMetaTags}">
-    <sly data-sly-test.isProperty="${metaTags.isProperty}">
-        <meta data-sly-test.tagLabel="${metaTags.getTagLabel}" data-sly-test.tagValue="${metaTags.getTagValue}" property="${tagLabel}" content="${tagValue}" />
-    </sly>
-    <sly data-sly-test.isProperty="${!isProperty}">
-        <meta data-sly-test.tagLabel="${metaTags.getTagLabel}" data-sly-test.tagValue="${metaTags.getTagValue}" name="${tagLabel}" content="${tagValue}" />
-    </sly>
-</sly>
+<link rel="dns-prefetch" href="//client-scripts.styla.com" />
+<link rel="dns-prefetch" href="//redpanda.styla.com" />
+<link rel="dns-prefetch" href="//styla-prod.us.imgix.net" />
