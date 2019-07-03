@@ -1,6 +1,5 @@
 <sly data-sly-use.templatedContainer="com.day.cq.wcm.foundation.TemplatedContainer"
      data-sly-repeat.child="${templatedContainer.structureResources}"
-     data-sly-use.seo="de.neofonie.styla.core.controller.StylaSEO"
-     data-sly-use="${'setAttributes.js' @ seobody = seo.body}"
+     data-sly-use="${'setAttributes.js' @ seobody = properties.stylaSeoBody}"
      data-sly-resource="${child.path @ resourceType=child.resourceType, decorationTagName='div'}">
 </sly>

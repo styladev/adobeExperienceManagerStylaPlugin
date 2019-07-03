@@ -39,7 +39,7 @@ public class SeoUtils {
         Map<String, Object> properties = new HashMap<>();
 
         writeMetaTagsToProperties(seo, properties);
-        updateSeoBodyResource(resource, resourceResolver, seo.getHtml().getBody());
+        properties.put("stylaSeoBody", seo.getHtml().getBody());
 
         modifiableValueMap.putAll(properties);
 
@@ -148,19 +148,6 @@ public class SeoUtils {
             }
         } catch(Exception e) {
             LOGGER.error("Failed to set meta tag", e);
-        }
-    }
-
-    private static void updateSeoBodyResource(final Resource contentResource, final ResourceResolver resourceResolver, final String body) {
-        try {
-            final Resource bodyResource = ResourceUtil.getOrCreateResource(resourceResolver, contentResource.getPath() + "/body", Collections.emptyMap(), null, true);
-            final ModifiableValueMap properties = bodyResource.adaptTo(ModifiableValueMap.class);
-            if (properties != null) {
-                properties.put("stylaBody", body);
-                resourceResolver.commit();
-            }
-        } catch (PersistenceException e) {
-            LOGGER.error("Could not create seo body node for " + contentResource.getPath() + "/body", e);
         }
     }
 }
