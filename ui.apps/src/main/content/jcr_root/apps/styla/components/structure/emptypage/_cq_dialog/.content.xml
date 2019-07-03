@@ -51,47 +51,57 @@
                                                         jcr:primaryType="nt:unstructured"
                                                         sling:resourceType="granite/ui/components/coral/foundation/form/textfield"
                                                         fieldLabel="canonical"
-                                                        name="./canonical"/>
+                                                        name="./stylaCanonical"/>
                                                     <robots
                                                         jcr:primaryType="nt:unstructured"
                                                         sling:resourceType="granite/ui/components/coral/foundation/form/textfield"
                                                         fieldLabel="robots"
-                                                        name="./robots"/>
+                                                        name="./stylaRobots"/>
                                                     <ogTitle
                                                         jcr:primaryType="nt:unstructured"
                                                         sling:resourceType="granite/ui/components/coral/foundation/form/textfield"
                                                         fieldLabel="og:title"
-                                                        name="./ogTitle"/>
+                                                        name="./stylaOgTitle"/>
                                                     <ogType
                                                         jcr:primaryType="nt:unstructured"
                                                         sling:resourceType="granite/ui/components/coral/foundation/form/textfield"
                                                         fieldLabel="og:type"
-                                                        name="./ogType"/>
+                                                        name="./stylaOgType"/>
                                                     <ogUrl
                                                         jcr:primaryType="nt:unstructured"
                                                         sling:resourceType="granite/ui/components/coral/foundation/form/textfield"
                                                         fieldLabel="og:url"
-                                                        name="./ogUrl"/>
+                                                        name="./stylaOgUrl"/>
                                                     <ogImage
                                                         jcr:primaryType="nt:unstructured"
                                                         sling:resourceType="granite/ui/components/coral/foundation/form/textfield"
                                                         fieldLabel="og:image"
-                                                        name="./ogImage"/>
+                                                        name="./stylaOgImage"/>
                                                     <ogImageWidth
                                                         jcr:primaryType="nt:unstructured"
                                                         sling:resourceType="granite/ui/components/coral/foundation/form/textfield"
                                                         fieldLabel="og:image:width"
-                                                        name="./ogImageWidth"/>
+                                                        name="./stylaOgImageWidth"/>
                                                     <ogImageHeight
                                                         jcr:primaryType="nt:unstructured"
                                                         sling:resourceType="granite/ui/components/coral/foundation/form/textfield"
                                                         fieldLabel="og:image:height"
-                                                        name="./ogImageHeight"/>
+                                                        name="./stylaOgImageHeight"/>
                                                     <twitterTitle
                                                         jcr:primaryType="nt:unstructured"
                                                         sling:resourceType="granite/ui/components/coral/foundation/form/textfield"
                                                         fieldLabel="twitter:title"
-                                                        name="./twitterTitle"/>
+                                                        name="./stylaTwitterTitle"/>
+                                                    <twitterDescription
+                                                        jcr:primaryType="nt:unstructured"
+                                                        sling:resourceType="granite/ui/components/coral/foundation/form/textfield"
+                                                        fieldLabel="twitter:description"
+                                                        name="./stylaTwitterDescription"/>
+                                                    <twitterImage
+                                                        jcr:primaryType="nt:unstructured"
+                                                        sling:resourceType="granite/ui/components/coral/foundation/form/textfield"
+                                                        fieldLabel="twitter:image"
+                                                        name="./stylaTwitterImage"/>
                                                 </items>
                                             </field>
                                         </items>

@@ -13,6 +13,15 @@ import java.util.Map;
 
 public class SeoUtils {
 
+    private static final String TAG_LINK = "link";
+    private static final String TAG_META = "meta";
+
+    private static final String ATTRIBUTE_REL = "rel";
+    private static final String ATTRIBUTE_HREF = "href";
+    private static final String ATTRIBUTE_NAME = "name";
+    private static final String ATTRIBUTE_CONTENT = "content";
+    private static final String ATTRIBUTE_PROPERTY = "property";
+
     private static final Logger LOGGER = LoggerFactory.getLogger(SeoUtils.class);
 
     public static void writeSeoToResource(final Seo seo, final Resource resource) {
@@ -20,16 +29,18 @@ public class SeoUtils {
             return;
         }
 
-        ResourceResolver resourceResolver = resource.getResourceResolver();
-        ModifiableValueMap modifiableValueMap = resource.adaptTo(ModifiableValueMap.class);
+        final ResourceResolver resourceResolver = resource.getResourceResolver();
+        final ModifiableValueMap modifiableValueMap = resource.adaptTo(ModifiableValueMap.class);
 
         if (modifiableValueMap == null) {
             return;
         }
 
         Map<String, Object> properties = new HashMap<>();
+
         writeMetaTagsToProperties(seo, properties);
         updateSeoBodyResource(resource, resourceResolver, seo.getHtml().getBody());
+
         modifiableValueMap.putAll(properties);
 
         try {
@@ -60,66 +71,80 @@ public class SeoUtils {
 
         try {
             // canonical
-            if ("link".equalsIgnoreCase(tag.getTag()) && tag.getAttributes() != null &&
-                    tag.getAttributes().has("rel") &&
-                    "canonical".equalsIgnoreCase(tag.getAttributes().get("rel").toString())) {
-                properties.put("stylaCanonical", tag.getAttributes().get("href").toString());
+            if (TAG_LINK.equalsIgnoreCase(tag.getTag()) && tag.getAttributes() != null &&
+                    tag.getAttributes().has(ATTRIBUTE_REL) &&
+                    "canonical".equalsIgnoreCase(tag.getAttributes().get(ATTRIBUTE_REL).getAsString())) {
+                properties.put("stylaCanonical", tag.getAttributes().get(ATTRIBUTE_HREF).getAsString());
             }
 
             // robots
-            if ("meta".equalsIgnoreCase(tag.getTag()) && tag.getAttributes() != null &&
-                    tag.getAttributes().has("name") &&
-                    "robots".equalsIgnoreCase(tag.getAttributes().get("name").toString())) {
-                properties.put("stylaRobots", tag.getAttributes().get("content").toString());
+            if (TAG_META.equalsIgnoreCase(tag.getTag()) && tag.getAttributes() != null &&
+                    tag.getAttributes().has(ATTRIBUTE_NAME) &&
+                    "robots".equalsIgnoreCase(tag.getAttributes().get(ATTRIBUTE_NAME).getAsString())) {
+                properties.put("stylaRobots", tag.getAttributes().get(ATTRIBUTE_CONTENT).getAsString());
             }
 
             // og:title
-            if ("meta".equalsIgnoreCase(tag.getTag()) && tag.getAttributes() != null &&
-                    tag.getAttributes().has("property") &&
-                    "og:title".equalsIgnoreCase(tag.getAttributes().get("property").toString())) {
-                properties.put("stylaOgTitle", tag.getAttributes().get("content").toString());
+            if (TAG_META.equalsIgnoreCase(tag.getTag()) && tag.getAttributes() != null &&
+                    tag.getAttributes().has(ATTRIBUTE_PROPERTY) &&
+                    "og:title".equalsIgnoreCase(tag.getAttributes().get(ATTRIBUTE_PROPERTY).getAsString())) {
+                properties.put("stylaOgTitle", tag.getAttributes().get(ATTRIBUTE_CONTENT).getAsString());
             }
 
             // og:type
-            if ("meta".equalsIgnoreCase(tag.getTag()) && tag.getAttributes() != null &&
-                    tag.getAttributes().has("property") &&
-                    "og:type".equalsIgnoreCase(tag.getAttributes().get("property").toString())) {
-                properties.put("stylaOgType", tag.getAttributes().get("content").toString());
+            if (TAG_META.equalsIgnoreCase(tag.getTag()) && tag.getAttributes() != null &&
+                    tag.getAttributes().has(ATTRIBUTE_PROPERTY) &&
+                    "og:type".equalsIgnoreCase(tag.getAttributes().get(ATTRIBUTE_PROPERTY).getAsString())) {
+                properties.put("stylaOgType", tag.getAttributes().get(ATTRIBUTE_CONTENT).getAsString());
             }
 
             // og:url
-            if ("meta".equalsIgnoreCase(tag.getTag()) && tag.getAttributes() != null &&
-                    tag.getAttributes().has("property") &&
-                    "og:url".equalsIgnoreCase(tag.getAttributes().get("property").toString())) {
-                properties.put("stylaOgUrl", tag.getAttributes().get("content").toString());
+            if (TAG_META.equalsIgnoreCase(tag.getTag()) && tag.getAttributes() != null &&
+                    tag.getAttributes().has(ATTRIBUTE_PROPERTY) &&
+                    "og:url".equalsIgnoreCase(tag.getAttributes().get(ATTRIBUTE_PROPERTY).getAsString())) {
+                properties.put("stylaOgUrl", tag.getAttributes().get(ATTRIBUTE_CONTENT).getAsString());
             }
 
             // og:image
-            if ("meta".equalsIgnoreCase(tag.getTag()) && tag.getAttributes() != null &&
-                    tag.getAttributes().has("property") &&
-                    "og:image".equalsIgnoreCase(tag.getAttributes().get("property").toString())) {
-                properties.put("stylaOgImage", tag.getAttributes().get("content").toString());
+            if (TAG_META.equalsIgnoreCase(tag.getTag()) && tag.getAttributes() != null &&
+                    tag.getAttributes().has(ATTRIBUTE_PROPERTY) &&
+                    "og:image".equalsIgnoreCase(tag.getAttributes().get(ATTRIBUTE_PROPERTY).getAsString())) {
+                properties.put("stylaOgImage", tag.getAttributes().get(ATTRIBUTE_CONTENT).getAsString());
             }
 
             // og:image:width
-            if ("meta".equalsIgnoreCase(tag.getTag()) && tag.getAttributes() != null &&
-                    tag.getAttributes().has("property") &&
-                    "og:image:width".equalsIgnoreCase(tag.getAttributes().get("property").toString())) {
-                properties.put("stylaOgImageWidth", tag.getAttributes().get("content").toString());
+            if (TAG_META.equalsIgnoreCase(tag.getTag()) && tag.getAttributes() != null &&
+                    tag.getAttributes().has(ATTRIBUTE_PROPERTY) &&
+                    "og:image:width".equalsIgnoreCase(tag.getAttributes().get(ATTRIBUTE_PROPERTY).getAsString())) {
+                properties.put("stylaOgImageWidth", tag.getAttributes().get(ATTRIBUTE_CONTENT).getAsString());
             }
 
             // og:image:height
-            if ("meta".equalsIgnoreCase(tag.getTag()) && tag.getAttributes() != null &&
-                    tag.getAttributes().has("property") &&
-                    "og:image:height".equalsIgnoreCase(tag.getAttributes().get("property").toString())) {
-                properties.put("stylaOgImageHeight", tag.getAttributes().get("content").toString());
+            if (TAG_META.equalsIgnoreCase(tag.getTag()) && tag.getAttributes() != null &&
+                    tag.getAttributes().has(ATTRIBUTE_PROPERTY) &&
+                    "og:image:height".equalsIgnoreCase(tag.getAttributes().get(ATTRIBUTE_PROPERTY).getAsString())) {
+                properties.put("stylaOgImageHeight", tag.getAttributes().get(ATTRIBUTE_CONTENT).getAsString());
             }
 
             // twitter:title
-            if ("meta".equalsIgnoreCase(tag.getTag()) && tag.getAttributes() != null &&
-                    tag.getAttributes().has("property") &&
-                    "twitter:title".equalsIgnoreCase(tag.getAttributes().get("property").toString())) {
-                properties.put("stylaTwitterTitle", tag.getAttributes().get("content").toString());
+            if (TAG_META.equalsIgnoreCase(tag.getTag()) && tag.getAttributes() != null &&
+                    tag.getAttributes().has(ATTRIBUTE_PROPERTY) &&
+                    "twitter:title".equalsIgnoreCase(tag.getAttributes().get(ATTRIBUTE_PROPERTY).getAsString())) {
+                properties.put("stylaTwitterTitle", tag.getAttributes().get(ATTRIBUTE_CONTENT).getAsString());
+            }
+
+            // twitter:description
+            if (TAG_META.equalsIgnoreCase(tag.getTag()) && tag.getAttributes() != null &&
+                    tag.getAttributes().has(ATTRIBUTE_PROPERTY) &&
+                    "twitter:description".equalsIgnoreCase(tag.getAttributes().get(ATTRIBUTE_PROPERTY).getAsString())) {
+                properties.put("stylaTwitterDescription", tag.getAttributes().get(ATTRIBUTE_CONTENT).getAsString());
+            }
+
+            // twitter:image
+            if (TAG_META.equalsIgnoreCase(tag.getTag()) && tag.getAttributes() != null &&
+                    tag.getAttributes().has(ATTRIBUTE_PROPERTY) &&
+                    "twitter:image".equalsIgnoreCase(tag.getAttributes().get(ATTRIBUTE_PROPERTY).getAsString())) {
+                properties.put("stylaTwitterImage", tag.getAttributes().get(ATTRIBUTE_CONTENT).getAsString());
             }
         } catch(Exception e) {
             LOGGER.error("Failed to set meta tag", e);
@@ -131,7 +156,7 @@ public class SeoUtils {
             final Resource bodyResource = ResourceUtil.getOrCreateResource(resourceResolver, contentResource.getPath() + "/body", Collections.emptyMap(), null, true);
             final ModifiableValueMap properties = bodyResource.adaptTo(ModifiableValueMap.class);
             if (properties != null) {
-                properties.put("body", body);
+                properties.put("stylaBody", body);
                 resourceResolver.commit();
             }
         } catch (PersistenceException e) {
