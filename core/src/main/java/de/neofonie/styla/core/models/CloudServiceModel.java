@@ -75,11 +75,15 @@ public class CloudServiceModel {
         return propertyValue;
     }
 
-    private String getCloudServiceProperty(ResourceResolver resourceResolver, Page contentRootPage) {
+    private String getCloudServiceProperty(final ResourceResolver resourceResolver, final Page page) {
         final String property = "seoApiUrl";
-        final String cloudServiceConfiguration = getCloudServiceConfiguration(contentRootPage);
+        final String cloudServiceConfiguration = getCloudServiceConfiguration(page);
 
-        if (!StringUtils.isNotEmpty(cloudServiceConfiguration)) {
+        if (StringUtils.isEmpty(cloudServiceConfiguration)) {
+            final Page parentPage = page.getParent();
+            if (parentPage != null) {
+                return getCloudServiceProperty(resourceResolver, parentPage);
+            }
             LOGGER.warn(String.format("Failed to get cloud service property: %s", property));
             return null;
         }
