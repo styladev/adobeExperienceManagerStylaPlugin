@@ -59,7 +59,7 @@ public class SeoUtils {
         final Iterator<SeoHeadTag> iterator = seo.getTags().iterator();
         while (iterator.hasNext()) {
             final SeoHeadTag tag = iterator.next();
-            LOGGER.info(String.format("Applying seo tag %s with %s", tag.getTag(), tag.toString()));
+            LOGGER.info(String.format("Applying seo tag %s with %s", tag.getTag(), tag.toString().replace("\n", "")));
             writeMetaTag(tag, properties);
         }
     }
@@ -82,6 +82,13 @@ public class SeoUtils {
                     tag.getAttributes().has(ATTRIBUTE_NAME) &&
                     "robots".equalsIgnoreCase(tag.getAttributes().get(ATTRIBUTE_NAME).getAsString())) {
                 properties.put("stylaRobots", tag.getAttributes().get(ATTRIBUTE_CONTENT).getAsString());
+            }
+
+            // description
+            if (TAG_META.equalsIgnoreCase(tag.getTag()) && tag.getAttributes() != null &&
+                    tag.getAttributes().has(ATTRIBUTE_NAME) &&
+                    "description".equalsIgnoreCase(tag.getAttributes().get(ATTRIBUTE_NAME).getAsString())) {
+                properties.put("stylaDescription", tag.getAttributes().get(ATTRIBUTE_CONTENT).getAsString());
             }
 
             // og:title
@@ -145,6 +152,20 @@ public class SeoUtils {
                     tag.getAttributes().has(ATTRIBUTE_PROPERTY) &&
                     "twitter:image".equalsIgnoreCase(tag.getAttributes().get(ATTRIBUTE_PROPERTY).getAsString())) {
                 properties.put("stylaTwitterImage", tag.getAttributes().get(ATTRIBUTE_CONTENT).getAsString());
+            }
+
+            // next
+            if (TAG_LINK.equalsIgnoreCase(tag.getTag()) && tag.getAttributes() != null &&
+                    tag.getAttributes().has(ATTRIBUTE_REL) &&
+                    "next".equalsIgnoreCase(tag.getAttributes().get(ATTRIBUTE_REL).getAsString())) {
+                properties.put("stylaPaginationNext", tag.getAttributes().get(ATTRIBUTE_HREF).getAsString());
+            }
+
+            // prev
+            if (TAG_LINK.equalsIgnoreCase(tag.getTag()) && tag.getAttributes() != null &&
+                    tag.getAttributes().has(ATTRIBUTE_REL) &&
+                    "prev".equalsIgnoreCase(tag.getAttributes().get(ATTRIBUTE_REL).getAsString())) {
+                properties.put("stylaPaginationPrev", tag.getAttributes().get(ATTRIBUTE_HREF).getAsString());
             }
         } catch(Exception e) {
             LOGGER.error("Failed to set meta tag", e);
