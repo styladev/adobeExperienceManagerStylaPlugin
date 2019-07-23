@@ -90,7 +90,7 @@ public class CloudServiceModel {
 
         final Resource cloudServiceResource = resourceResolver.getResource(cloudServiceConfiguration + "/" + JcrConstants.JCR_CONTENT);
         if (cloudServiceResource == null) {
-            LOGGER.warn(String.format("Failed to get cloud service resource for property: %s", property));
+            LOGGER.error(String.format("Failed to get cloud service resource for property: %s", property));
             return null;
         }
 
