@@ -57,6 +57,11 @@
                                                         sling:resourceType="granite/ui/components/coral/foundation/form/textfield"
                                                         fieldLabel="robots"
                                                         name="./stylaRobots"/>
+                                                    <description
+                                                        jcr:primaryType="nt:unstructured"
+                                                        sling:resourceType="granite/ui/components/coral/foundation/form/textfield"
+                                                        fieldLabel="description"
+                                                        name="./stylaDescription"/>
                                                     <ogTitle
                                                         jcr:primaryType="nt:unstructured"
                                                         sling:resourceType="granite/ui/components/coral/foundation/form/textfield"
@@ -102,6 +107,16 @@
                                                         sling:resourceType="granite/ui/components/coral/foundation/form/textfield"
                                                         fieldLabel="twitter:image"
                                                         name="./stylaTwitterImage"/>
+                                                    <next
+                                                        jcr:primaryType="nt:unstructured"
+                                                        sling:resourceType="granite/ui/components/coral/foundation/form/textfield"
+                                                        fieldLabel="next"
+                                                        name="./stylaPaginationNext"/>
+                                                    <prev
+                                                        jcr:primaryType="nt:unstructured"
+                                                        sling:resourceType="granite/ui/components/coral/foundation/form/textfield"
+                                                        fieldLabel="prev"
+                                                        name="./stylaPaginationPrev"/>
                                                 </items>
                                             </field>
                                         </items>
