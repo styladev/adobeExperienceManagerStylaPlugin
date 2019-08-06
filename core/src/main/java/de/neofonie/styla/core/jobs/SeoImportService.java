@@ -248,7 +248,8 @@ public class SeoImportService implements Runnable {
         HttpMethod httpGet = new GetMethod(seoApiUrl);
         HttpMethodParams httpMethodParams = new HttpMethodParams();
         httpMethodParams.setSoTimeout(10000);
-        httpMethodParams.setParameter("accept", "application/json");
+        httpMethodParams.setParameter("accept", "application/json; charset=UTF-8");
+        httpMethodParams.setContentCharset("UTF-8");
         httpGet.setParams(httpMethodParams);
 
         // TODO: for non exiting pages the status code is 200 but the json contains a status field which might be 404 ...
