@@ -186,7 +186,13 @@ public class SeoImportService implements Runnable {
             return null;
         }
 
-        return cloudServiceModel.getSeoApiUrl(resourceResolver, rootPage)
+        final String seoApiUrl = cloudServiceModel.getSeoApiUrl(resourceResolver, rootPage);
+
+        if (StringUtils.isBlank(seoApiUrl)) {
+            return null;
+        }
+
+        return seoApiUrl
            .replace("$URL", path)
            .replace("$LANG", currentPage.getLanguage().toString());
     }
