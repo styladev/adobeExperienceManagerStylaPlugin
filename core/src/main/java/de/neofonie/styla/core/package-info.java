@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-@Version("1.1.1")
+@Version("1.1.2")
 package de.neofonie.styla.core;
 
 import org.osgi.annotation.versioning.Version;
