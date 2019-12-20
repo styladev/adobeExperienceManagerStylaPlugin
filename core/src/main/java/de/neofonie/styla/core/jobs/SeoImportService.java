@@ -31,6 +31,7 @@ import org.slf4j.LoggerFactory;
 import javax.jcr.Session;
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.net.HttpURLConnection.HTTP_OK;
@@ -113,7 +114,7 @@ public class SeoImportService implements Runnable {
     @Override
     public void run() {
         if (cronjobRunning) {
-            LOGGER.warn("Cronjob is still running ... aborting");
+            LOGGER.warn("Aborting cronjob start since it is still running");
             return;
         }
 
@@ -143,7 +144,7 @@ public class SeoImportService implements Runnable {
 
         final Map<String, String> configs = new HashMap<>();
         for (int i = 0; i < templateTypes.length; i++) {
-            configs.put(templateTypes[i], contentRootPaths[i]);
+            configs.put(contentRootPaths[i], templateTypes[i]);
         }
 
         for (final Map.Entry<String, String> entry : configs.entrySet()) {
@@ -151,12 +152,12 @@ public class SeoImportService implements Runnable {
         }
 
         final Date endDate = new Date();
-        final long diffMilliseconds = endDate.getTime() - startDate.getTime();
-        final long diffMinutes = diffMilliseconds / (60 * 1000);
-        LOGGER.info(String.format("Finished scheduled import in %d minutes (%s)", diffMinutes, uniqueID));
+        final float diffInMillies = endDate.getTime() - startDate.getTime();
+        final float diffInMinutes = diffInMillies / (60 * 1000);
+        LOGGER.info(String.format("Finished scheduled import in %.2f minutes (%s)", diffInMinutes, uniqueID));
     }
 
-    private void importEntry(final String templateType, final String contentRootPath) {
+    private void importEntry(final String contentRootPath, final String templateType) {
         LOGGER.info(String.format("Start importing seo data for path=%s and template=%s",
                 contentRootPath, templateType));
 
@@ -164,7 +165,7 @@ public class SeoImportService implements Runnable {
         Page contentRootPage = getContentRootPage(resourceResolver, contentRootPath);
 
         if(contentRootPage == null) {
-            LOGGER.error("Failed to find content root page - aborting seo import service");
+            LOGGER.error("Failed to find content root page");
             return;
         }
 
