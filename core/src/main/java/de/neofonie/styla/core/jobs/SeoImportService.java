@@ -30,9 +30,8 @@ import org.slf4j.LoggerFactory;
 
 import javax.jcr.Session;
 import java.io.IOException;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.net.HttpURLConnection.HTTP_OK;
@@ -42,6 +41,8 @@ import static java.net.HttpURLConnection.HTTP_OK;
 public class SeoImportService implements Runnable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SeoImportService.class);
+
+    private static boolean cronjobRunning = false;
 
     @Reference
     private ResourceResolverFactory resourceResolverFactory;
@@ -62,12 +63,13 @@ public class SeoImportService implements Runnable {
     private String contentRootPath;
     private boolean autoActivate;
     private String templateType;
+    private String schedulerExpression;
 
     @ObjectClassDefinition(name = "Styla SEO job service", description = "CRON job for importing SEO data from Styla")
     public static @interface Config {
 
         @AttributeDefinition(name = "Cron-job expression")
-        String scheduler_expression() default "0 * * ? * *";
+        String scheduler_expression() default "0 0 0 ? * *";
 
         @AttributeDefinition(name = "Template Type", description = "Import works only for pages with this template type")
         String templateType() default "/conf/styla/settings/wcm/templates/master";
@@ -83,14 +85,14 @@ public class SeoImportService implements Runnable {
 
     @Activate
     protected void activate(final Config config) {
-
         String configuredContentRootPath = String.valueOf(config.contentRootPath());
         String templateType = String.valueOf(config.templateType());
         this.autoActivate = Boolean.valueOf(config.autoActivate());
         this.contentRootPath = (configuredContentRootPath != null) ? configuredContentRootPath : null;
         this.templateType = StringUtils.isNotEmpty(templateType) ? templateType : "/conf/styla/settings/wcm/templates/master";
+        this.schedulerExpression = config.scheduler_expression();
 
-        LOGGER.info("configure: contentRootPath='{}'", this.contentRootPath);
+        LOGGER.info("activate: contentRootPath='{}'", this.contentRootPath);
     }
 
     private ResourceResolver getResourceResolver() {
@@ -111,6 +113,27 @@ public class SeoImportService implements Runnable {
 
     @Override
     public void run() {
+        if (cronjobRunning) {
+            LOGGER.warn("Aborting cronjob start since it is still running");
+            return;
+        }
+
+        try {
+            cronjobRunning = true;
+            importData();
+        } catch(Exception e) {
+            LOGGER.error("Failed to execute cronjob", e);
+        } finally {
+            cronjobRunning = false;
+        }
+    }
+
+    private void importData() {
+        final String uniqueID = UUID.randomUUID().toString();
+        final Date startDate = new Date();
+
+        LOGGER.info(String.format("Start new scheduled import (%s) via expression %s", uniqueID, this.schedulerExpression));
+
         final String[] templateTypes = templateType.split("\\|");
         final String[] contentRootPaths = contentRootPath.split("\\|");
 
@@ -119,12 +142,22 @@ public class SeoImportService implements Runnable {
             return;
         }
 
+        final Map<String, String> configs = new HashMap<>();
         for (int i = 0; i < templateTypes.length; i++) {
-            importData(templateTypes[i], contentRootPaths[i]);
+            configs.put(contentRootPaths[i], templateTypes[i]);
         }
+
+        for (final Map.Entry<String, String> entry : configs.entrySet()) {
+            importEntry(entry.getKey(), entry.getValue());
+        }
+
+        final Date endDate = new Date();
+        final float diffInMillies = endDate.getTime() - startDate.getTime();
+        final float diffInMinutes = diffInMillies / (60 * 1000);
+        LOGGER.info(String.format("Finished scheduled import in %.2f minutes (%s)", diffInMinutes, uniqueID));
     }
 
-    private void importData(final String templateType, final String contentRootPath) {
+    private void importEntry(final String contentRootPath, final String templateType) {
         LOGGER.info(String.format("Start importing seo data for path=%s and template=%s",
                 contentRootPath, templateType));
 
@@ -132,7 +165,7 @@ public class SeoImportService implements Runnable {
         Page contentRootPage = getContentRootPage(resourceResolver, contentRootPath);
 
         if(contentRootPage == null) {
-            LOGGER.error("Failed to find content root page - aborting seo import service");
+            LOGGER.error("Failed to find content root page");
             return;
         }
 
@@ -161,7 +194,8 @@ public class SeoImportService implements Runnable {
             LOGGER.info(String.format("Finished page: %s on %s", childPage.getName(), childPage.getPath()));
         }
 
-        LOGGER.info("Finish importing seo data");
+        LOGGER.info(String.format("Finish importing seo data for path=%s and template=%s",
+                contentRootPath, templateType));
     }
 
     private boolean isSeoImportEnabled(Page page) {
