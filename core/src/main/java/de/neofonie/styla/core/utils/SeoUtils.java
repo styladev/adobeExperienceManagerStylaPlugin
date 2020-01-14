@@ -2,14 +2,16 @@ package de.neofonie.styla.core.utils;
 
 import de.neofonie.styla.core.models.Seo;
 import de.neofonie.styla.core.models.SeoHeadTag;
+
+import org.apache.commons.lang3.StringUtils;
 import org.apache.sling.api.resource.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 
 public class SeoUtils {
 
@@ -24,16 +26,22 @@ public class SeoUtils {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SeoUtils.class);
 
-    public static void writeSeoToResource(final Seo seo, final Resource resource) {
+    /**
+     * Writes SEO information into a resource
+     * @param seo
+     * @param resource
+     * @return returns true if the resource has been modified.
+     */
+    public static boolean writeSeoToResource(final Seo seo, final Resource resource) {
         if (resource == null || seo == null) {
-            return;
+            return false;
         }
 
         final ResourceResolver resourceResolver = resource.getResourceResolver();
         final ModifiableValueMap modifiableValueMap = resource.adaptTo(ModifiableValueMap.class);
 
         if (modifiableValueMap == null) {
-            return;
+            return false;
         }
 
         Map<String, Object> properties = new HashMap<>();
@@ -41,13 +49,39 @@ public class SeoUtils {
         writeMetaTagsToProperties(seo, properties);
         properties.put("stylaSeoBody", seo.getHtml().getBody());
 
-        modifiableValueMap.putAll(properties);
+        if (isUpdated(modifiableValueMap, properties)) {
 
-        try {
-            resourceResolver.commit();
-        } catch (PersistenceException e) {
-            LOGGER.error("Could not commit change for resource " + resource.getPath());
+            modifiableValueMap.putAll(properties);
+            try {
+                resourceResolver.commit();
+                return true;
+            } catch (PersistenceException e) {
+                LOGGER.error("Could not commit change for resource " + resource.getPath());
+                return false;
+            }
+        } else {
+            return false;
         }
+    }
+
+    /**
+     * tells if a new map contains different values than the ones contained in the value map
+     *
+     * @param modifiableValueMap a resource valuemap
+     * @param properties         a Map
+     * @return true if map contains values different than the valuemap, for the same key.
+     */
+    private static boolean isUpdated(ModifiableValueMap modifiableValueMap, Map<String, Object> properties) {
+        boolean modified;
+        Set<String> propertiesKeySet = properties.keySet();
+        for (String key : propertiesKeySet) {
+            String newValue = String.valueOf(properties.get(key));
+            String oldValue = modifiableValueMap.get(key, String.class);
+            if (!StringUtils.equals(oldValue, newValue)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static void writeMetaTagsToProperties(final Seo seo, final Map<String, Object> properties) {
