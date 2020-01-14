@@ -75,7 +75,7 @@ public class SeoUtils {
         boolean modified;
         Set<String> propertiesKeySet = properties.keySet();
         for (String key : propertiesKeySet) {
-            String newValue = properties.get(key).toString();
+            String newValue = String.valueOf(properties.get(key));
             String oldValue = modifiableValueMap.get(key, String.class);
             if (!StringUtils.equals(oldValue, newValue)) {
                 return true;
