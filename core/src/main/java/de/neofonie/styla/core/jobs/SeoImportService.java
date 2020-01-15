@@ -265,17 +265,19 @@ public class SeoImportService implements Runnable {
             LOGGER.warn("Autoactive is false");
             return;
         }
+
         if (!wasModified) {
             LOGGER.debug("Page was not modified: {}", resource.getPath());
-        } else {
-            try {
-                resourceResolver.refresh();
-                LOGGER.debug("Page was modified, activating:  {} ", resource.getPath());
-                replicator.replicate(resourceResolver.adaptTo(Session.class), ReplicationActionType.ACTIVATE, resource.getPath());
-                resourceResolver.commit();
-            } catch (NullPointerException | ReplicationException | PersistenceException e) {
-                LOGGER.warn(String.format("Could not auto activate %s", resource.getPath()), e);
-            }
+            return;
+        }
+
+        try {
+            resourceResolver.refresh();
+            LOGGER.debug("Page was modified, activating:  {} ", resource.getPath());
+            replicator.replicate(resourceResolver.adaptTo(Session.class), ReplicationActionType.ACTIVATE, resource.getPath());
+            resourceResolver.commit();
+        } catch (NullPointerException | ReplicationException | PersistenceException e) {
+            LOGGER.warn(String.format("Could not auto activate %s", resource.getPath()), e);
         }
 
     }

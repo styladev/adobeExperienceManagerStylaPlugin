@@ -34,6 +34,7 @@ public class SeoUtils {
      */
     public static boolean writeSeoToResource(final Seo seo, final Resource resource) {
         if (resource == null || seo == null) {
+            LOGGER.warn("Resource or seo is empty");
             return false;
         }
 
@@ -41,27 +42,29 @@ public class SeoUtils {
         final ModifiableValueMap modifiableValueMap = resource.adaptTo(ModifiableValueMap.class);
 
         if (modifiableValueMap == null) {
+            LOGGER.warn("ModifiableValueMap of resource is null");
             return false;
         }
 
-        Map<String, Object> properties = new HashMap<>();
+        final Map<String, Object> properties = new HashMap<>();
 
         writeMetaTagsToProperties(seo, properties);
         properties.put("stylaSeoBody", seo.getHtml().getBody());
 
-        if (isUpdated(modifiableValueMap, properties)) {
-
-            modifiableValueMap.putAll(properties);
-            try {
-                resourceResolver.commit();
-                return true;
-            } catch (PersistenceException e) {
-                LOGGER.error("Could not commit change for resource " + resource.getPath());
-                return false;
-            }
-        } else {
+        if (!isUpdated(modifiableValueMap, properties)) {
             return false;
         }
+
+        modifiableValueMap.putAll(properties);
+
+        try {
+            resourceResolver.commit();
+            return true;
+        } catch (PersistenceException e) {
+            LOGGER.error("Could not commit change for resource " + resource.getPath());
+        }
+
+        return false;
     }
 
     /**
@@ -72,11 +75,10 @@ public class SeoUtils {
      * @return true if map contains values different than the valuemap, for the same key.
      */
     private static boolean isUpdated(ModifiableValueMap modifiableValueMap, Map<String, Object> properties) {
-        boolean modified;
-        Set<String> propertiesKeySet = properties.keySet();
-        for (String key : propertiesKeySet) {
-            String newValue = String.valueOf(properties.get(key));
-            String oldValue = modifiableValueMap.get(key, String.class);
+        final Set<String> propertiesKeySet = properties.keySet();
+        for (final String key : propertiesKeySet) {
+            final String newValue = String.valueOf(properties.get(key));
+            final String oldValue = modifiableValueMap.get(key, String.class);
             if (!StringUtils.equals(oldValue, newValue)) {
                 return true;
             }
