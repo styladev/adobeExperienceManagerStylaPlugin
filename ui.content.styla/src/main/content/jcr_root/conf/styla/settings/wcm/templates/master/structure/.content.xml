@@ -14,17 +14,6 @@
         jcr:primaryType="cq:PageContent"
         jcr:uuid="f69fd6b1-d5dd-4c3b-bb7c-f82aeddf7eaf"
         sling:resourceType="styla/components/structure/emptypage">
-        <root
-            jcr:primaryType="nt:unstructured"
-            sling:resourceType="wcm/foundation/components/responsivegrid">
-            <contenthub
-                jcr:created="{Date}2019-01-22T10:59:33.174+01:00"
-                jcr:createdBy="admin"
-                jcr:lastModified="{Date}2019-01-22T10:59:33.174+01:00"
-                jcr:lastModifiedBy="admin"
-                jcr:primaryType="nt:unstructured"
-                sling:resourceType="styla/components/content/contenthub"/>
-        </root>
         <cq:responsive jcr:primaryType="nt:unstructured">
             <breakpoints jcr:primaryType="nt:unstructured">
                 <phone
