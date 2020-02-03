@@ -65,10 +65,7 @@ public class CloudServiceModel {
 
                 if (cloudServiceResource != null) {
                     ValueMap properties = cloudServiceResource.getValueMap();
-
-                    if (properties != null) {
-                        propertyValue = properties.get(property, "");
-                    }
+                    propertyValue = properties.get(property, "");
                 }
             }
         }

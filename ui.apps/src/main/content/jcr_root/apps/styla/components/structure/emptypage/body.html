@@ -1,5 +1,17 @@
-<sly data-sly-use.templatedContainer="com.day.cq.wcm.foundation.TemplatedContainer"
-     data-sly-repeat.child="${templatedContainer.structureResources}"
-     data-sly-use="${'setAttributes.js' @ seobody = properties.stylaSeoBody}"
-     data-sly-resource="${child.path @ resourceType=child.resourceType, decorationTagName='div'}">
-</sly>
+<div id="stylaMagazine">
+    ${properties.stylaSeoBody @ context='html'}
+    <script>
+        if ( !( window.location.host.indexOf( 'google' ) > -1 ) )
+        {
+            document.getElementById('stylaContentSEO').parentNode.removeChild(document.getElementById('stylaContentSEO'));
+
+            var elements = document.querySelectorAll("[data-no-hydration='true']");
+            for (var i = 0; i < elements.length; ++i) {
+                var last, node = elements[i];
+                while (last = node.lastChild) {
+                    node.removeChild(last);
+                }
+            }
+        }
+    </script>
+</div>
