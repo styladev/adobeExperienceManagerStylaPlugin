@@ -4,11 +4,13 @@ import com.day.cq.replication.ReplicationActionType;
 import com.day.cq.replication.ReplicationException;
 import com.day.cq.replication.Replicator;
 import com.day.cq.wcm.api.Page;
+import com.day.cq.wcm.api.PageManager;
+import com.day.cq.wcm.api.WCMException;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import de.neofonie.styla.core.models.CloudServiceModel;
-import de.neofonie.styla.core.models.Seo;
+import com.google.gson.reflect.TypeToken;
+import de.neofonie.styla.core.models.*;
 import de.neofonie.styla.core.utils.PageUtils;
 import de.neofonie.styla.core.utils.SeoUtils;
 import org.apache.commons.httpclient.HttpClient;
@@ -30,8 +32,8 @@ import org.slf4j.LoggerFactory;
 
 import javax.jcr.Session;
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.net.HttpURLConnection.HTTP_OK;
@@ -61,6 +63,7 @@ public class SeoImportService implements Runnable {
     private SlingRepository repository;
 
     private String contentRootPath;
+    private String siteRootPath;
     private boolean autoActivate;
     private String templateType;
     private String schedulerExpression;
@@ -77,34 +80,30 @@ public class SeoImportService implements Runnable {
         @AttributeDefinition(name = "Content Root Path", description = "Root path for the styla relating content")
         String contentRootPath() default "/content";
 
+        @AttributeDefinition(name = "Site Root Path", description = "Site root path which is external invisible")
+        String siteRootPath() default "";
+
         @AttributeDefinition(name = "Auto-Activate", description = "If checked, pages with imported SEO data will be activated automatically")
         boolean autoActivate() default true;
 
     }
 
-
     @Activate
     protected void activate(final Config config) {
-        String configuredContentRootPath = String.valueOf(config.contentRootPath());
-        String templateType = String.valueOf(config.templateType());
-        this.autoActivate = Boolean.valueOf(config.autoActivate());
-        this.contentRootPath = (configuredContentRootPath != null) ? configuredContentRootPath : null;
-        this.templateType = StringUtils.isNotEmpty(templateType) ? templateType : "/conf/styla/settings/wcm/templates/master";
+        this.autoActivate = config.autoActivate();
+        this.contentRootPath = config.contentRootPath();
+        this.siteRootPath = config.siteRootPath();
+        this.templateType = config.templateType();
         this.schedulerExpression = config.scheduler_expression();
 
         LOGGER.info("activate: contentRootPath='{}'", this.contentRootPath);
     }
 
     private ResourceResolver getResourceResolver() {
-        Map<String, Object> authInfo = Collections.singletonMap(ResourceResolverFactory.SUBSERVICE, (Object) SEO_IMPORT_SERVICE);
+        final Map<String, Object> authInfo = Collections.singletonMap(ResourceResolverFactory.SUBSERVICE, (Object) SEO_IMPORT_SERVICE);
 
         try {
-            ResourceResolver resourceResolver = resourceResolverFactory.getServiceResourceResolver(authInfo);
-            if (resourceResolver != null) {
-                return resourceResolver;
-            } else {
-                LOGGER.debug("ResourceResolver is null (Subservice {})", SEO_IMPORT_SERVICE);
-            }
+            return resourceResolverFactory.getServiceResourceResolver(authInfo);
         } catch (LoginException e) {
             LOGGER.error("Login Exception for Subservice - " + SEO_IMPORT_SERVICE, e.getMessage());
         }
@@ -136,19 +135,30 @@ public class SeoImportService implements Runnable {
 
         final String[] templateTypes = templateType.split("\\|");
         final String[] contentRootPaths = contentRootPath.split("\\|");
+        final String[] siteRootPaths = siteRootPath.split("\\|");
 
         if (templateTypes.length != contentRootPaths.length) {
             LOGGER.error("The templateType and contentRootPath should not have different length for piped values");
             return;
         }
 
-        final Map<String, String> configs = new HashMap<>();
-        for (int i = 0; i < templateTypes.length; i++) {
-            configs.put(contentRootPaths[i], templateTypes[i]);
+        if (contentRootPaths.length != siteRootPaths.length) {
+            LOGGER.error("The contentRootPath and siteRootPath should not have different length for piped values");
+            return;
         }
 
-        for (final Map.Entry<String, String> entry : configs.entrySet()) {
-            importEntry(entry.getKey(), entry.getValue());
+        final Map<String, CrawlerConfig> configs = new HashMap<>();
+        for (int i = 0; i < templateTypes.length; i++) {
+            final CrawlerConfig config = new CrawlerConfig();
+            config.setContentRootPath(contentRootPaths[i]);
+            config.setSiteRootPath(siteRootPaths[i]);
+            config.setTemplateType(templateTypes[i]);
+            configs.put(contentRootPaths[i], config);
+        }
+
+        for (final Map.Entry<String, CrawlerConfig> entry : configs.entrySet()) {
+            final CrawlerConfig config = entry.getValue();
+            importEntry(config.getContentRootPath(), config.getSiteRootPath(), config.getTemplateType());
         }
 
         final Date endDate = new Date();
@@ -157,45 +167,135 @@ public class SeoImportService implements Runnable {
         LOGGER.info(String.format("Finished scheduled import in %.2f minutes (%s)", diffInMinutes, uniqueID));
     }
 
-    private void importEntry(final String contentRootPath, final String templateType) {
-        LOGGER.info(String.format("Start importing seo data for path=%s and template=%s",
-                contentRootPath, templateType));
+    private void importEntry(final String contentRootPath, final String siteRootPath, final String templateType) {
+        LOGGER.info(String.format("Start importing seo data for contentPath=%s , sitePath=%s , template=%s",
+                contentRootPath, siteRootPath, templateType));
 
-        ResourceResolver resourceResolver = getResourceResolver();
-        Page contentRootPage = getContentRootPage(resourceResolver, contentRootPath);
+        final ResourceResolver resourceResolver = getResourceResolver();
+        final Page contentRootPage = getContentRootPage(resourceResolver, contentRootPath);
 
         if(contentRootPage == null) {
             LOGGER.error("Failed to find content root page");
             return;
         }
 
-        final List<Page> pages = Lists.newArrayList();
-        PageUtils.recursivelySearchForPage(contentRootPage.listChildren(), pages, templateType);
-        LOGGER.info(String.format("Found pages (%d)", pages.size()));
+        final String client = cloudServiceModel.getClient(resourceResolver, contentRootPage);
+        if (StringUtils.isNotBlank(client)) {
+            // TODO: new implementation needs more testing
+            //updatePagesViaPathsEndpoint(client, resourceResolver, contentRootPage, templateType);
+            updatePagesInAem(client, resourceResolver, contentRootPage, siteRootPath, templateType);
+        } else {
+            updatePagesInAem(client, resourceResolver, contentRootPage, siteRootPath, templateType);
+        }
+    }
 
-        for (final Page childPage : pages) {
-            LOGGER.info(String.format("Processing page: %s on %s", childPage.getName(), childPage.getPath()));
+    private void updatePagesViaPathsEndpoint(final String client,
+                                             final ResourceResolver resourceResolver,
+                                             final Page contentRootPage,
+                                             final String templateType) {
+        LOGGER.debug("Using updatePagesViaPathsEndpoint() method");
 
-            if (!isSeoImportEnabled(childPage)) {
-                LOGGER.warn("Skip page due disableSeoImport flag");
+        final String apiUrl = String.format("https://paths.styla.com/v1/delta/%s", client);
+        final String jsonResponse = executeGetDataRequest(apiUrl);
+
+        if (jsonResponse == null) {
+            LOGGER.warn("Path api seems not be reachable");
+            return;
+        }
+
+        final Gson gson = new GsonBuilder().create();
+        final Type listType = new TypeToken<List<PathEntry>>() {}.getType();
+        final List<PathEntry> pathEntries = gson.fromJson(jsonResponse, listType);
+
+        if (pathEntries == null || pathEntries.size() == 0) {
+            LOGGER.warn("Path api response should not be empty");
+            return;
+        }
+
+        for (final PathEntry pathEntry : pathEntries) {
+            if (pathEntry.getType() == null || PathEntryType.MODULE.geValue().equals(pathEntry.getType().geValue())) {
+                LOGGER.debug(String.format("Ignore modular content on path %s", pathEntry.getPath()));
                 continue;
             }
 
-            final String seoApiUrl = buildSeoApiUrl(resourceResolver, contentRootPage, childPage);
-            if (seoApiUrl != null) {
-                final Seo seo = fetchSeoData(seoApiUrl);
-                if (seo != null) {
-                    applySeoData(seo, childPage, resourceResolver);
-                } else {
-                    LOGGER.warn(String.format("Fetched seo is empty for page %s - no seo data is applied", childPage.getName()));
-                }
+            LOGGER.info(String.format("Found path: %s", pathEntry.getPath()));
+
+            final String name = pathEntry.getName();
+            final String fullPath = contentRootPage.getPath() + pathEntry.getPath();
+
+            final PageManager pageManager = resourceResolver.adaptTo(PageManager.class);
+            final Page currentPage = pageManager.getPage(fullPath);
+            if (currentPage != null) {
+                updatePage(client, resourceResolver, currentPage, contentRootPage, templateType);
+                return;
             }
 
-            LOGGER.info(String.format("Finished page: %s on %s", childPage.getName(), childPage.getPath()));
+            try {
+                final Page newPage = pageManager.create(fullPath, name, templateType, name);
+                updatePage(client, resourceResolver, newPage, contentRootPage, templateType);
+            } catch (WCMException e) {
+                LOGGER.error(String.format("Failed to create page on path %s", fullPath), e);
+            }
+        }
+    }
+
+    private void updatePagesInAem(final String client,
+                                  final ResourceResolver resourceResolver,
+                                  final Page rootPage,
+                                  final String siteRootPath,
+                                  final String templateType) {
+        final List<Page> pages = Lists.newArrayList();
+        PageUtils.recursivelySearchForPage(rootPage.listChildren(), pages, templateType);
+        LOGGER.info(String.format("Found pages (%d)", pages.size()));
+
+        for (final Page childPage : pages) {
+            updatePage(client, resourceResolver, childPage, rootPage, siteRootPath);
         }
 
-        LOGGER.info(String.format("Finish importing seo data for path=%s and template=%s",
-                contentRootPath, templateType));
+        // Todo fix
+        LOGGER.info(String.format("Finish importing seo data for contentPath=%s , sitePath=%s , template=%s",
+                rootPage.getPath(), siteRootPath, templateType));
+    }
+
+    private void updatePage(final String client,
+                            final ResourceResolver resourceResolver,
+                            final Page currentPage,
+                            final Page rootPage,
+                            final String siteRootPath) {
+        LOGGER.info(String.format("Processing page: %s on %s", currentPage.getName(), currentPage.getPath()));
+
+        if (!isSeoImportEnabled(currentPage)) {
+            LOGGER.warn("Skip page due disableSeoImport flag");
+            return;
+        }
+
+        final String path = getPagePathname(client, resourceResolver, rootPage, currentPage, siteRootPath);
+        final String seoApiUrl = buildSeoApiUrl(resourceResolver, rootPage, currentPage, path);
+        if (seoApiUrl != null) {
+            final Seo seo = fetchSeoData(seoApiUrl);
+            if (seo != null) {
+                applySeoData(seo, currentPage, resourceResolver, path);
+            } else {
+                LOGGER.warn(String.format("Fetched seo is empty for page %s - no seo data is applied", currentPage.getName()));
+            }
+        }
+
+        LOGGER.info(String.format("Finished page: %s on %s", currentPage.getName(), currentPage.getPath()));
+    }
+
+    private String getPagePathname(final String client,
+                                   final ResourceResolver resourceResolver,
+                                   final Page rootPage,
+                                   final Page currentPage,
+                                   final String siteRootPath) {
+        final boolean isLegacyClient = StringUtils.isBlank(client);
+
+        if (isLegacyClient) {
+            return StringUtils.removeStart(currentPage.getPath(), rootPage.getPath());
+        }
+
+        final String pagePath = resourceResolver.map(String.format("%s.html", currentPage.getPath()));
+        return StringUtils.removeStart(pagePath, siteRootPath);
     }
 
     private boolean isSeoImportEnabled(Page page) {
@@ -213,9 +313,10 @@ public class SeoImportService implements Runnable {
         return true;
     }
 
-    private String buildSeoApiUrl(final ResourceResolver resourceResolver, final Page rootPage, final Page currentPage) {
-        final String path = StringUtils.removeStart(currentPage.getPath(), rootPage.getPath());
-
+    private String buildSeoApiUrl(final ResourceResolver resourceResolver,
+                                  final Page rootPage,
+                                  final Page currentPage,
+                                  final String path) {
         if (path == null) {
             return null;
         }
@@ -250,7 +351,10 @@ public class SeoImportService implements Runnable {
         return seo;
     }
 
-    private void applySeoData(final Seo seo, final Page page, final ResourceResolver resourceResolver) {
+    private void applySeoData(final Seo seo,
+                              final Page page,
+                              final ResourceResolver resourceResolver,
+                              final String path) {
         if (seo == null) {
             LOGGER.warn(String.format("Couldn't find seo for %s on %s", page.getName(), page.getPath()));
             return;
@@ -259,7 +363,9 @@ public class SeoImportService implements Runnable {
         LOGGER.info(String.format("Start applying seo to page: %s on %s", page.getName(), page.getPath()));
 
         final Resource resource = page.getContentResource();
-        boolean wasModified = SeoUtils.writeSeoToResource(seo, resource);
+        final String client = cloudServiceModel.getClient(resourceResolver, page);
+        final String seoBody = buildStylaBody(client, path, seo);
+        final boolean wasModified = SeoUtils.writeSeoToResource(resource, seo, path, seoBody);
 
         if (!autoActivate) {
             LOGGER.warn("Autoactive is false");
@@ -282,8 +388,28 @@ public class SeoImportService implements Runnable {
 
     }
 
-    private String executeGetDataRequest(String seoApiUrl) {
-        LOGGER.info(String.format("Requesting seo api url: %s", seoApiUrl));
+    public String buildStylaBody(final String client, final String path, final Seo seo) {
+        final boolean isLegacyClient = StringUtils.isBlank(client);
+        final String containerAttributes = isLegacyClient ? "id=\"stylaMagazine\"" : new StringBuilder()
+                    .append(String.format("data-styla-client=\"%s\"", client))
+                    .append(StringUtils.isNotBlank(path) ? String.format(" data-styla-content=\"%s\"", path) : "")
+                    .toString();
+
+        LOGGER.debug("container attributes " + containerAttributes);
+        final String stylaBody = new StringBuilder()
+                .append("<div ")
+                .append(containerAttributes)
+                .append(">")
+                .append(seo.getHtml().getBody())
+                .append("</div>")
+                .toString();
+
+        LOGGER.debug(String.format("Styla Body = %s", stylaBody));
+        return stylaBody;
+    }
+
+    private String executeGetDataRequest(String apiUrl) {
+        LOGGER.info(String.format("Requesting api url: %s", apiUrl));
         String response = null;
         HttpClient httpClient = new HttpClient();
         HttpConnectionManagerParams params = new HttpConnectionManagerParams();
@@ -291,7 +417,7 @@ public class SeoImportService implements Runnable {
         params.setConnectionTimeout(10000);
         httpClient.getHttpConnectionManager().setParams(params);
 
-        HttpMethod httpGet = new GetMethod(seoApiUrl);
+        HttpMethod httpGet = new GetMethod(apiUrl);
         HttpMethodParams httpMethodParams = new HttpMethodParams();
         httpMethodParams.setSoTimeout(10000);
         httpMethodParams.setParameter("accept", "application/json; charset=UTF-8");
@@ -304,12 +430,12 @@ public class SeoImportService implements Runnable {
             if (statusCode == HTTP_OK) {
                 response = httpGet.getResponseBodyAsString();
             } else if (statusCode == HTTP_NOT_FOUND) {
-                LOGGER.warn("HTTP request to " + seoApiUrl + " returned status code 404 and is not handled as a failure. No data?");
+                LOGGER.warn("HTTP request to " + apiUrl + " returned status code 404 and is not handled as a failure. No data?");
             } else {
-                LOGGER.warn("HTTP request to " + seoApiUrl + " returned status code " + statusCode + ". Aborting.");
+                LOGGER.warn("HTTP request to " + apiUrl + " returned status code " + statusCode + ". Aborting.");
             }
         } catch (IOException e) {
-            LOGGER.error("Error during HTTP request to " + seoApiUrl + ": " + e.getMessage());
+            LOGGER.error("Error during HTTP request to " + apiUrl + ": " + e.getMessage());
         }
         return response;
     }

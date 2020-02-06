@@ -11,17 +11,24 @@
                 jcr:primaryType="cq:Panel"
                 title="Config">
                 <items jcr:primaryType="cq:WidgetCollection">
+                    <client
+                            jcr:primaryType="cq:Widget"
+                            fieldDescription="Styla Client Name"
+                            fieldLabel="Client Name"
+                            xtype="textfield"
+                            name="./client"
+                            title="Client Name"/>
                     <seoApiUrl
                         jcr:primaryType="cq:Widget"
-                        fieldDescription="The url for the styla SEO API. Use placeholder $URL and $LANG, e.g. http://seoapi.styla.com/clients/CLIENT?url=story/$URL&amp;lang=$LANG"
-                        fieldLabel="SEO API URL"
+                        fieldDescription="Styla Seo Api Url - Use placeholder $URL and $LANG, e.g. http://seoapi.styla.com/clients/CLIENT?url=story/$URL&amp;lang=$LANG"
+                        fieldLabel="Seo Api Url"
                         xtype="textfield"
                         name="./seoApiUrl"
-                        title="SEO API URL"/>
+                        title="Seo Api Url"/>
                     <script
                         jcr:primaryType="cq:Widget"
-                        fieldDescription="The JS script for the styla Content Hub"
-                        fieldLabel="SCRIPT"
+                        fieldDescription="Styla JS Script"
+                        fieldLabel="Script"
                         xtype="textfield"
                         name="./script"
                         title="Script"/>
