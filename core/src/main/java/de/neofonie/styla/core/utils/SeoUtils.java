@@ -28,11 +28,13 @@ public class SeoUtils {
 
     /**
      * Writes SEO information into a resource
-     * @param seo
-     * @param resource
+     *
      * @return returns true if the resource has been modified.
      */
-    public static boolean writeSeoToResource(final Seo seo, final Resource resource) {
+    public static boolean writeSeoToResource(final Resource resource,
+                                             final Seo seo,
+                                             final String path,
+                                             final String seoBody) {
         if (resource == null || seo == null) {
             LOGGER.warn("Resource or seo is empty");
             return false;
@@ -49,7 +51,8 @@ public class SeoUtils {
         final Map<String, Object> properties = new HashMap<>();
 
         writeMetaTagsToProperties(seo, properties);
-        properties.put("stylaSeoBody", seo.getHtml().getBody());
+        properties.put("stylaPath", path);
+        properties.put("stylaSeoBody", seoBody);
 
         if (!isUpdated(modifiableValueMap, properties)) {
             return false;

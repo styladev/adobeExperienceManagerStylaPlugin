@@ -27,8 +27,8 @@ public class CloudServiceModel {
     @Inject
     private Page currentPage;
 
-    public String getSeoApiUrl(ResourceResolver resourceResolver, Page contentRootPage) {
-        return getCloudServiceProperty(resourceResolver, contentRootPage);
+    public String getSeoApiUrl(final ResourceResolver resourceResolver, final Page page) {
+        return getCloudServiceProperty(resourceResolver, page, "seoApiUrl");
     }
 
     public String getSeoApiUrl() {
@@ -36,7 +36,15 @@ public class CloudServiceModel {
     }
 
     public String getScript() {
-        return getCloudServiceProperty("script");
+        final String script = getCloudServiceProperty("script");
+        LOGGER.debug(String.format("Found script: %s", script));
+        return script;
+    }
+
+    public String getClient(final ResourceResolver resourceResolver, final Page page) {
+        final String client = getCloudServiceProperty(resourceResolver, page, "client");
+        LOGGER.debug(String.format("Found client: %s", client));
+        return client;
     }
 
     private String getCloudServiceConfiguration(Page contentRootPage) {
@@ -72,14 +80,15 @@ public class CloudServiceModel {
         return propertyValue;
     }
 
-    private String getCloudServiceProperty(final ResourceResolver resourceResolver, final Page page) {
-        final String property = "seoApiUrl";
+    private String getCloudServiceProperty(final ResourceResolver resourceResolver,
+                                           final Page page,
+                                           final String property) {
         final String cloudServiceConfiguration = getCloudServiceConfiguration(page);
 
         if (StringUtils.isEmpty(cloudServiceConfiguration)) {
             final Page parentPage = page.getParent();
             if (parentPage != null) {
-                return getCloudServiceProperty(resourceResolver, parentPage);
+                return getCloudServiceProperty(resourceResolver, parentPage, property);
             }
             LOGGER.warn(String.format("Failed to get cloud service property: %s", property));
             return null;

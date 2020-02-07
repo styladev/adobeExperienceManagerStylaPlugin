@@ -11,6 +11,7 @@
         jcr:primaryType="cq:PageContent"
         jcr:title="Client sample"
         sling:resourceType="acs/styla/components/stylapage"
-        script="//client-scripts.stage.eu.magalog.net/scripts/clients/aem-test.js"
+        client="aem-test"
+        script="https://engine.styla.com/prophet-stage.js"
         seoApiUrl="http://seoapi.stage.eu.magalog.net/clients/aem-test?url=$URL"/>
 </jcr:root>
